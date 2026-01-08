@@ -323,8 +323,10 @@ generate_summary() {
     local conn_output="${OUTPUT_DIR}/connection-analysis.txt"
     if [[ -f "$conn_output" ]]; then
         local cloud_count
-        cloud_count=$(grep -c "CLOUD\|52\.42\.98\.25" "$conn_output" 2>/dev/null || echo "0")
-        if [[ "$cloud_count" -gt 0 ]]; then
+        cloud_count=$(grep -c "CLOUD\|52\.42\.98\.25" "$conn_output" 2>/dev/null | tr -d '[:space:]' || echo "0")
+        # Ensure cloud_count is a valid integer
+        cloud_count="${cloud_count:-0}"
+        if [[ "$cloud_count" =~ ^[0-9]+$ ]] && [[ "$cloud_count" -gt 0 ]]; then
             echo "Status: ACTIVE CLOUD CONNECTIONS DETECTED" | tee -a "$SUMMARY_FILE"
             echo "Count: $cloud_count" | tee -a "$SUMMARY_FILE"
         else
@@ -352,6 +354,8 @@ generate_summary() {
     
     # Recommendations
     echo "=== Recommendations ===" | tee -a "$SUMMARY_FILE"
+    
+    local interface_output="${OUTPUT_DIR}/webcam-interface.txt"
     
     if [[ -f "$rtsp_output" ]] && ! grep -q "rtsp://" "$rtsp_output" 2>/dev/null; then
         echo "- Run RTSP discovery with different paths or check authentication" | tee -a "$SUMMARY_FILE"
