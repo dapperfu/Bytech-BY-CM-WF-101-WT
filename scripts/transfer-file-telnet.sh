@@ -19,6 +19,14 @@ fi
 
 TELNET_PORT="${TELNET_PORT:-23}"
 COMMAND_TIMEOUT="${COMMAND_TIMEOUT:-30}"
+FORCE_HTTP="${FORCE_HTTP:-}"
+
+# If base64 is known to not work, force HTTP method
+if [[ "${FORCE_HTTP}" == "1" ]] || [[ "${FORCE_HTTP}" == "true" ]]; then
+    USE_HTTP=1
+else
+    USE_HTTP=0
+fi
 
 # Check if expect is available
 if ! command -v expect >/dev/null 2>&1; then
@@ -34,8 +42,11 @@ if [[ -z "$TARGET_IP" ]] || [[ -z "$LOCAL_FILE" ]]; then
     echo "  $0 10.0.0.227 root hellotuya scripts/setup-mitm-iptables-local.sh /tmp/"
     echo "  $0 10.0.0.227 root hellotuya script.sh /app/abin/"
     echo ""
-    echo "The file will be base64 encoded and transferred via telnet."
+    echo "The file will be transferred via telnet (base64 or HTTP method)."
     echo "Remote path defaults to /tmp/ if not specified."
+    echo ""
+    echo "Environment variables:"
+    echo "  FORCE_HTTP=1  - Force HTTP transfer method (useful when base64 not available)"
     echo ""
     if [[ -n "$1" ]] && [[ ! "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         echo "[!] Error: First argument must be target IP address (e.g., 10.0.0.227)"
@@ -96,20 +107,65 @@ encode_file() {
 }
 
 #######################################
-# Transfer File Directly (No Base64)
+# Transfer File via HTTP Server
 #######################################
-transfer_file_direct() {
-    log_info "Transferring file directly (no base64 encoding required)..."
+transfer_file_http() {
+    log_info "Transferring file via HTTP server (no base64 required)..."
     
-    # Read file content
-    local file_content
-    file_content=$(cat "$LOCAL_FILE")
+    # Get local IP address that remote device can reach
+    local local_ip
+    local_ip=$(ip route get "$TARGET_IP" 2>/dev/null | grep -oP 'src \K\S+' | head -1 || \
+               ip addr show | grep -oP 'inet \K[0-9.]+' | grep -v '127.0.0.1' | head -1 || \
+               hostname -I 2>/dev/null | awk '{print $1}' || \
+               echo "127.0.0.1")
     
-    # Write expect script for direct transfer
+    # Use random high port (10000-65535)
+    local http_port
+    http_port=$((RANDOM % 55536 + 10000))
+    
+    # Get directory and filename
+    local file_dir
+    local file_name
+    file_dir=$(dirname "$LOCAL_FILE")
+    file_name=$(basename "$LOCAL_FILE")
+    
+    log_info "Starting HTTP server on $local_ip:$http_port"
+    log_info "Serving file: $file_name"
+    
+    # Start HTTP server in background
+    local server_pid
+    if command -v python3 >/dev/null 2>&1; then
+        cd "$file_dir" && python3 -m http.server "$http_port" >/dev/null 2>&1 &
+        server_pid=$!
+    elif command -v python >/dev/null 2>&1; then
+        cd "$file_dir" && python -m SimpleHTTPServer "$http_port" >/dev/null 2>&1 &
+        server_pid=$!
+    else
+        log_error "Python not found. Cannot start HTTP server."
+        return 1
+    fi
+    
+    # Wait a moment for server to start
+    sleep 1
+    
+    # Check if server is running
+    if ! kill -0 "$server_pid" 2>/dev/null; then
+        log_error "Failed to start HTTP server"
+        return 1
+    fi
+    
+    # Cleanup function
+    cleanup_server() {
+        kill "$server_pid" 2>/dev/null || true
+        wait "$server_pid" 2>/dev/null || true
+    }
+    trap cleanup_server EXIT
+    
+    # Write expect script to download file via wget/curl
     local temp_expect
     temp_expect=$(mktemp)
     
-    cat > "$temp_expect" <<EXPECT_DIRECT_BASE
+    cat > "$temp_expect" <<EXPECT_HTTP_BASE
 set timeout TIMEOUT_VAL
 log_user 0
 
@@ -151,42 +207,27 @@ expect {
     }
 }
 
-# Write file directly using heredoc
-send "cat > REMOTE_FILE_VAL << 'ENDOFFILE'\r"
+# Try wget first, then curl, then fail
+send "if command -v wget >/dev/null 2>&1; then wget http://LOCAL_IP_VAL:HTTP_PORT_VAL/FILE_NAME_VAL -O REMOTE_FILE_VAL; elif command -v curl >/dev/null 2>&1; then curl http://LOCAL_IP_VAL:HTTP_PORT_VAL/FILE_NAME_VAL -o REMOTE_FILE_VAL; else echo 'DOWNLOAD_TOOL_MISSING'; fi\r"
 expect {
-    "> " {
-        # File content will be sent here
+    "DOWNLOAD_TOOL_MISSING" {
+        puts "DOWNLOAD_TOOL_MISSING"
+        send "exit\r"
+        expect eof
+        exit 1
     }
+    "# " {}
+    "\$ " {}
     timeout {
-        puts "HEREDOC_START_TIMEOUT"
+        puts "DOWNLOAD_TIMEOUT"
+        send "exit\r"
+        expect eof
         exit 1
     }
 }
 
-# Read and send file content line by line
-set f [open "LOCAL_FILE_PATH" r]
-while {[gets \$f line] >= 0} {
-    send "\$line\r"
-    expect {
-        "> " {
-            # Continue
-        }
-        timeout {
-            puts "LINE_TIMEOUT"
-            break
-        }
-    }
-}
-close \$f
-
-send "ENDOFFILE\r"
-expect {
-    "# " {}
-    "\$ " {}
-    timeout {
-        puts "HEREDOC_END_TIMEOUT"
-    }
-}
+# Wait a moment for download to complete
+sleep 2
 
 # Make executable
 send "chmod +x REMOTE_FILE_VAL 2>/dev/null || true\r"
@@ -196,8 +237,8 @@ expect {
     timeout {}
 }
 
-# Verify file exists
-send "test -f REMOTE_FILE_VAL && echo 'FILE_EXISTS' || echo 'FILE_MISSING'\r"
+# Verify file exists and has content
+send "test -f REMOTE_FILE_VAL && test -s REMOTE_FILE_VAL && echo 'FILE_EXISTS' || echo 'FILE_MISSING'\r"
 expect {
     "FILE_EXISTS" {
         puts "TRANSFER_SUCCESS"
@@ -211,7 +252,7 @@ expect {
 }
 send "exit\r"
 expect eof
-EXPECT_DIRECT_BASE
+EXPECT_HTTP_BASE
     
     # Replace placeholders
     sed -i "s|TIMEOUT_VAL|$COMMAND_TIMEOUT|g" "$temp_expect"
@@ -220,18 +261,28 @@ EXPECT_DIRECT_BASE
     sed -i "s|USERNAME_VAL|$USERNAME|g" "$temp_expect"
     sed -i "s|PASSWORD_VAL|$PASSWORD|g" "$temp_expect"
     sed -i "s|REMOTE_FILE_VAL|$REMOTE_FILE|g" "$temp_expect"
-    sed -i "s|LOCAL_FILE_PATH|$LOCAL_FILE|g" "$temp_expect"
+    sed -i "s|LOCAL_IP_VAL|$local_ip|g" "$temp_expect"
+    sed -i "s|HTTP_PORT_VAL|$http_port|g" "$temp_expect"
+    sed -i "s|FILE_NAME_VAL|$file_name|g" "$temp_expect"
     
     local result
     result=$(expect -f "$temp_expect" 2>&1)
+    local expect_exit=$?
+    
+    # Cleanup server
+    cleanup_server
+    trap - EXIT
     
     rm -f "$temp_expect"
     
-    if echo "$result" | grep -q "TRANSFER_SUCCESS"; then
-        log_success "File transferred successfully: $REMOTE_FILE"
+    if echo "$result" | grep -q "DOWNLOAD_TOOL_MISSING"; then
+        log_error "Neither wget nor curl available on remote device"
+        return 1
+    elif echo "$result" | grep -q "TRANSFER_SUCCESS"; then
+        log_success "File transferred successfully via HTTP: $REMOTE_FILE"
         return 0
     else
-        log_error "Direct transfer failed"
+        log_error "HTTP transfer failed"
         echo "$result" | grep -v "^spawn telnet" | grep -v "^Trying" | head -20
         return 1
     fi
@@ -354,6 +405,28 @@ expect {
                     "$ " {}
                     timeout {}
                 }
+                # Verify decode worked by checking first line
+                send "head -1 REMOTE_FILE_VAL 2>/dev/null | grep -q '^#!/' && echo 'DECODE_OK' || echo 'DECODE_FAILED'\r"
+                expect {
+                    "DECODE_FAILED" {
+                        puts "BASE64_DECODE_FAILED"
+                        send "rm -f REMOTE_FILE_VAL.b64 REMOTE_FILE_VAL\r"
+                        expect {
+                            "# " {}
+                            "$ " {}
+                            timeout {}
+                        }
+                        send "exit\r"
+                        expect eof
+                        return
+                    }
+                    "DECODE_OK" {
+                        # Success, continue
+                    }
+                    "# " {}
+                    "$ " {}
+                    timeout {}
+                }
             }
             "BASE64_NOT_AVAILABLE" {
                 # Base64 not available - signal that we need direct transfer
@@ -445,8 +518,8 @@ EXPECT_SCRIPT_BASE
     
     rm -f "$temp_expect" "$temp_encoded"
     
-    if echo "$result" | grep -q "BASE64_NOT_AVAILABLE"; then
-        log_warn "base64 not available on remote device, using direct transfer method"
+    if echo "$result" | grep -q "BASE64_NOT_AVAILABLE\|BASE64_DECODE_FAILED"; then
+        log_warn "base64 not available or decode failed on remote device, using HTTP transfer method"
         return 2  # Special return code for base64 not available
     elif echo "$result" | grep -q "TRANSFER_SUCCESS"; then
         log_success "File transferred successfully: $REMOTE_FILE"
@@ -472,7 +545,23 @@ main() {
     log_info "Local file: $LOCAL_FILE"
     log_info "Remote path: $REMOTE_FILE"
     
-    # Try base64 method first, fallback to direct transfer if base64 not available
+    # Try HTTP method first if forced, or base64 method with HTTP fallback
+    if [ "$USE_HTTP" -eq 1 ]; then
+        log_info "Using HTTP transfer method (forced)"
+        if transfer_file_http; then
+            log_success "HTTP transfer complete"
+            log_info "File is available at: $REMOTE_FILE"
+            log_info ""
+            log_info "To execute on remote device:"
+            log_info "  sh $REMOTE_FILE"
+            exit 0
+        else
+            log_error "HTTP transfer failed"
+            exit 1
+        fi
+    fi
+    
+    # Try base64 method first, fallback to HTTP if base64 not available
     transfer_file
     local transfer_result=$?
     
@@ -488,22 +577,22 @@ main() {
         log_info "Note: If script uses bash syntax and device only has sh, use 'sh' to run it"
         exit 0
     elif [ "$transfer_result" -eq 2 ]; then
-        log_warn "base64 not available on remote device, using direct transfer method..."
-        if transfer_file_direct; then
-            log_success "Direct transfer complete"
+        log_warn "base64 not available on remote device, using HTTP server method..."
+        if transfer_file_http; then
+            log_success "HTTP transfer complete"
             log_info "File is available at: $REMOTE_FILE"
             log_info ""
             log_info "To execute on remote device:"
             log_info "  sh $REMOTE_FILE"
             exit 0
         else
-            log_error "Direct transfer failed"
+            log_error "HTTP transfer failed"
             exit 1
         fi
     else
-        log_warn "Base64 transfer failed, trying direct transfer method..."
-        if transfer_file_direct; then
-            log_success "Direct transfer complete"
+        log_warn "Base64 transfer failed, trying HTTP server method..."
+        if transfer_file_http; then
+            log_success "HTTP transfer complete"
             log_info "File is available at: $REMOTE_FILE"
             log_info ""
             log_info "To execute on remote device:"
