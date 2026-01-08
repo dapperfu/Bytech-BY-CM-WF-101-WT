@@ -139,14 +139,22 @@ mitm-venv:
 	@echo "[*] Creating MITMproxy virtual environment..."
 	@if command -v uv >/dev/null 2>&1; then \
 		echo "[*] Using UV package manager"; \
-		uv venv $(MITM_VENV_DIR); \
-		uv pip install --python $(MITM_VENV_DIR)/bin/python mitmproxy; \
+		if [ ! -d "$(MITM_VENV_DIR)" ]; then \
+			echo "[*] Creating virtual environment..."; \
+			uv venv $(MITM_VENV_DIR); \
+		fi; \
+		if [ -f "$(MITM_VENV_DIR)/bin/mitmweb" ]; then \
+			echo "[*] mitmproxy already installed, skipping..."; \
+		else \
+			echo "[*] Installing mitmproxy (downloading packages, this may take a moment on first run)..."; \
+			uv pip install --python $(MITM_VENV_DIR)/bin/python mitmproxy; \
+		fi; \
 	else \
 		echo "[!] Error: UV package manager not found"; \
 		echo "[*] Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh"; \
 		exit 1; \
 	fi
-	@echo "[+] MITMproxy virtual environment created"
+	@echo "[+] MITMproxy virtual environment ready"
 	@echo "[*] Virtual environment location: $(MITM_VENV_DIR)"
 	@$(MITM_VENV_DIR)/bin/mitmweb --version || true
 
