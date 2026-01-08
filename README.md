@@ -117,6 +117,22 @@ This repository includes a comprehensive penetration testing suite for IoT devic
    ./scripts/iot-mega-enum.sh 192.168.1.100 eth0 scripts/iot-config.yaml
    ```
 
+   **Or run cameradar standalone:**
+   ```bash
+   ./scripts/cameradar-rtsp-scan.sh <target-ip> [ports] [output-dir] [timeout-ms] [attack-interval-ms]
+   ```
+
+   Example:
+   ```bash
+   ./scripts/cameradar-rtsp-scan.sh 10.0.0.227
+   ./scripts/cameradar-rtsp-scan.sh 10.0.0.227 554,8554 ./output 3000 100
+   ```
+
+   **Or use Makefile:**
+   ```bash
+   make cameradar TARGET_IP=10.0.0.227
+   ```
+
 3. **View results:**
    - HTML report: `iot_enum_<ip>_<timestamp>/report.html`
    - Summary report: `iot_enum_<ip>_<timestamp>/summary.txt`
@@ -138,6 +154,7 @@ This repository includes a comprehensive penetration testing suite for IoT devic
 
 #### Protocol-Specific Tools
 - **RTSP Scanner**: RTSP stream discovery and enumeration
+- **Cameradar**: Automated RTSP stream discovery and credential brute-forcing
 - **ONVIF Scanner**: ONVIF camera device discovery and enumeration
 - **UPnP Scanner**: UPnP device discovery and information gathering
 - **Telnet/SSH/HTTP**: Protocol-specific enumeration
@@ -171,6 +188,7 @@ tools:
     metasploit: false  # Disabled by default
   protocol_specific:
     rtsp: true
+    cameradar: true
     onvif: true
     upnp: true
     telnet: true
@@ -180,6 +198,10 @@ tools:
 execution:
   mode: smart  # smart, parallel, sequential
   max_parallel: 4
+
+cameradar:
+  timeout: 2000  # Request timeout in milliseconds
+  attack_interval: 0  # Delay between attacks in milliseconds (0 = no delay)
 
 vulnerability_testing:
   default_credentials:
@@ -221,6 +243,8 @@ iot_enum_<ip>_<timestamp>/
 ├── deep.*                   # Deep service enumeration results
 ├── nikto_*.txt              # Nikto scan results per port
 ├── rtsp_scan.txt             # RTSP enumeration results
+├── cameradar_rtsp.json       # Cameradar JSON output (machine-readable)
+├── cameradar_rtsp.txt        # Cameradar text output (human-readable)
 ├── onvif_scan.txt           # ONVIF enumeration results
 ├── upnp_scan.txt            # UPnP enumeration results
 ├── default_creds.txt        # Default credential test results
@@ -239,7 +263,7 @@ The HTML report provides:
 - **Executive Summary**: Quick overview of findings
 - **Network Scan Results**: Open ports and services
 - **Service Enumeration**: Detailed service information
-- **Protocol-Specific Findings**: RTSP, ONVIF, UPnP discoveries
+- **Protocol-Specific Findings**: RTSP, Cameradar, ONVIF, UPnP discoveries
 - **Vulnerability Assessment**: Credentials, CVEs, exploits
 - **Recommendations**: Security improvement suggestions
 
@@ -263,6 +287,7 @@ The suite uses both pre-built Docker images and custom-built images:
 - `aler9/rtsp-simple-server`: RTSP server for testing
 - `frapsoft/nikto`: Nikto web scanner
 - `metasploitframework/metasploit-framework`: Metasploit framework
+- `ullaakut/cameradar`: Cameradar RTSP stream penetration testing tool
 
 #### Custom Images (Built from Dockerfiles)
 - `iot-pentest/hydra`: THC-Hydra credential brute-forcer
