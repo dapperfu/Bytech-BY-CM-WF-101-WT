@@ -1,0 +1,3 @@
+✖ unable to load credentials dictionary: unable to unmarshal dictionary contents: json: cannot unmarshal array into Go value of type cameradar.Credentials
+Loading credentials...ko
+  > Loading credentials dictionary from path "/tmp/custom_credentials.json"

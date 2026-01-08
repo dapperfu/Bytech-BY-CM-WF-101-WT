@@ -1,0 +1,40 @@
+[2026-01-07 23:38:39] [INFO] Starting connection analysis on 10.0.0.227
+[2026-01-07 23:38:39] [INFO] Analyzing network connections...
+
+=== Connection Analysis Report ===
+Target: 10.0.0.227
+Date: Wed Jan  7 11:38:39 PM EST 2026
+
+=== All Connections ===
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+=== Listening Services ===
+
+=== Local Network Connections (10.0.0.0/24) ===
+
+=== Cloud Connections (EXTERNAL) ===
+No cloud connections detected
+[2026-01-07 23:38:39] [SUCCESS] No cloud connections found
+
+=== Processes Making Cloud Connections ===
+No processes making cloud connections
+
+=== Summary ===
+Listening services: 0
+Local connections: 0
+Cloud connections: 0
+
+[2026-01-07 23:38:39] [SUCCESS] Analysis complete. Results saved to: webcam-evaluation-10.0.0.227-20260107_233809/connection-analysis.txt

@@ -11,14 +11,19 @@ set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
 set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
 
 # Compiler flags for ARMv6
-set(CMAKE_C_FLAGS_INIT "-march=armv6 -mtune=arm1176jzf-s")
-set(CMAKE_CXX_FLAGS_INIT "-march=armv6 -mtune=arm1176jzf-s")
+# Note: ARMv6 may not have FPU, so use soft-float even with gnueabihf toolchain
+set(CMAKE_C_FLAGS_INIT "-march=armv6 -mtune=arm1176jzf-s -mfloat-abi=softfp")
+set(CMAKE_CXX_FLAGS_INIT "-march=armv6 -mtune=arm1176jzf-s -mfloat-abi=softfp")
 
-# Default C/C++ standards
-set(CMAKE_C_STANDARD 89)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Default C/C++ standards (only set if not already set by project)
+if(NOT DEFINED CMAKE_C_STANDARD)
+    set(CMAKE_C_STANDARD 90)  # C90 (ANSI C) - CMake doesn't recognize C89
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
 
 # Search paths
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)

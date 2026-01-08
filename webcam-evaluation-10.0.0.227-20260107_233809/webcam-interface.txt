@@ -1,0 +1,220 @@
+=== Webcam Interface Analysis Report ===
+Target: 10.0.0.227
+Date: Wed Jan  7 11:38:39 PM EST 2026
+
+[2026-01-07 23:38:39] [INFO] Analyzing apollo binary...
+
+=== Apollo Binary Analysis ===
+Binary location and size:
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+File type:
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+[2026-01-07 23:38:39] [INFO] Extracting strings from apollo binary...
+Relevant strings (video/camera related):
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+[2026-01-07 23:38:39] [INFO] Analyzing video devices...
+
+=== Video Device Analysis ===
+Video devices:
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+[2026-01-07 23:38:39] [INFO] Analyzing apollo process...
+
+=== Apollo Process Analysis ===
+[2026-01-07 23:38:39] [SUCCESS] Found apollo process with PID: invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+Apollo PID: invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+Command line:
+missing close-brace
+    while executing
+"expect {"
+
+[2026-01-07 23:38:39] [INFO] Getting process environment variables...
+Relevant environment variables:
+missing close-brace
+    while executing
+"expect {"
+
+[2026-01-07 23:38:39] [INFO] Checking open file descriptors...
+Open file descriptors (first 30):
+missing close-brace
+    while executing
+"expect {"
+
+[2026-01-07 23:38:39] [INFO] Analyzing hardware interface...
+
+=== Hardware Interface Analysis ===
+USB devices:
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+Relevant kernel modules:
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+[2026-01-07 23:38:39] [INFO] Checking kernel messages for camera devices...
+Kernel messages (camera related):
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+V4L2 class devices:
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+[2026-01-07 23:38:39] [INFO] Analyzing how apollo accesses camera...
+
+=== Camera Access Method Analysis ===
+Memory maps (device files):
+missing close-brace
+    while executing
+"expect {"
+
+Camera-related libraries:
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+[2026-01-07 23:38:39] [SUCCESS] Analysis complete. Results saved to: webcam-evaluation-10.0.0.227-20260107_233809/webcam-interface.txt
+
+=== Analysis Summary ===
+Report generated: Wed Jan  7 11:38:39 PM EST 2026

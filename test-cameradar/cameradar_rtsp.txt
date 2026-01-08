@@ -1,0 +1,24 @@
+==========================================
+Cameradar RTSP Penetration Test Results
+==========================================
+Target: 10.0.0.227
+Ports: 554,8554
+Scan Date: Thu Jan  8 02:05:24 AM EST 2026
+Request Timeout: 3000ms
+Attack Interval: 50ms
+Execution Timeout: 60s
+Verbose Mode: true
+
+------------------------------------------
+Full Execution Output (stdout + stderr):
+------------------------------------------
+✖ unable to load credentials dictionary: unable to unmarshal dictionary contents: json: cannot unmarshal array into Go value of type cameradar.Credentials
+Loading credentials...ko
+  > Loading credentials dictionary from path "/tmp/custom_credentials.json"
+
+------------------------------------------
+JSON Output (for parsing):
+------------------------------------------
+✖ unable to load credentials dictionary: unable to unmarshal dictionary contents: json: cannot unmarshal array into Go value of type cameradar.Credentials
+Loading credentials...ko
+  > Loading credentials dictionary from path "/tmp/custom_credentials.json"

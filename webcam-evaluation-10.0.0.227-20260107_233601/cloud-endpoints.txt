@@ -1,0 +1,82 @@
+=== Cloud Endpoint Discovery Report ===
+Target: 10.0.0.227
+Date: Wed Jan  7 11:36:31 PM EST 2026
+Local Network: 10.0.0.0/24
+
+[2026-01-07 23:36:31] [INFO] Discovering active network connections...
+
+=== Active Network Connections ===
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+[2026-01-07 23:36:31] [INFO] Extracting cloud endpoints from connections...
+[2026-01-07 23:36:31] [INFO] Discovering DNS servers...
+
+=== DNS Servers ===
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+[2026-01-07 23:36:31] [INFO] Discovering cloud endpoints from process environment...
+
+=== Process Environment Variables ===
+Apollo process environment (cloud-related):
+missing close-brace
+    while executing
+"expect {"
+
+[2026-01-07 23:36:31] [INFO] Searching configuration files for cloud endpoints...
+
+=== Configuration Files Analysis ===
+Configuration files found:
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+
+[2026-01-07 23:36:31] [INFO] Checking for known cloud service IPs...
+
+=== Known Cloud Service IPs ===
+52.42.98.25 (MQTT server - from probe data)
+
+[2026-01-07 23:36:31] [INFO] Generating summary...
+
+=== Cloud Endpoints Summary ===
+Unique cloud IP addresses:
+52.42.98.25
+
+[2026-01-07 23:36:31] [SUCCESS] Found 1 unique cloud IP address(es)
+[2026-01-07 23:36:31] [SUCCESS] Discovery complete. Results saved to: webcam-evaluation-10.0.0.227-20260107_233601/cloud-endpoints.txt

@@ -1,8 +1,8 @@
-#include <iostream>
+#include <cstdio>
 
 int main() {
-    std::cout << "Hello, World from C++!" << std::endl;
-    std::cout << "Compiled for ARMv6 FH8616 chipset" << std::endl;
+    printf("Hello, World from C++!\n");
+    printf("Compiled for ARMv6 FH8616 chipset\n");
     return 0;
 }
 

@@ -1,0 +1,72 @@
+=== RTSP Stream Discovery Report ===
+Target: 10.0.0.227:8554
+Date: Wed Jan  7 11:00:24 PM EST 2026
+
+[2026-01-07 23:00:24] [INFO] Checking if RTSP port 8554 is accessible...
+[2026-01-07 23:00:24] [SUCCESS] RTSP port 8554 is open
+RTSP port 8554 is open
+
+[2026-01-07 23:00:24] [INFO] Testing common RTSP paths...
+=== Tested RTSP Paths ===
+[2026-01-07 23:00:24] [INFO] Testing RTSP path: /stream1
+[2026-01-07 23:00:26] [SUCCESS] RTSP path responds: /stream1
+rtsp://10.0.0.227:8554/stream1
+[2026-01-07 23:00:26] [INFO] Testing RTSP path: /live
+[2026-01-07 23:00:29] [SUCCESS] RTSP path responds: /live
+rtsp://10.0.0.227:8554/live
+[2026-01-07 23:00:29] [INFO] Testing RTSP path: /video
+[2026-01-07 23:00:31] [SUCCESS] RTSP path responds: /video
+rtsp://10.0.0.227:8554/video
+[2026-01-07 23:00:31] [INFO] Testing RTSP path: /ch0
+[2026-01-07 23:00:33] [SUCCESS] RTSP path responds: /ch0
+rtsp://10.0.0.227:8554/ch0
+[2026-01-07 23:00:33] [INFO] Testing RTSP path: /ch1
+[2026-01-07 23:00:35] [SUCCESS] RTSP path responds: /ch1
+rtsp://10.0.0.227:8554/ch1
+[2026-01-07 23:00:35] [INFO] Testing RTSP path: /cam
+[2026-01-07 23:00:37] [SUCCESS] RTSP path responds: /cam
+rtsp://10.0.0.227:8554/cam
+[2026-01-07 23:00:37] [INFO] Testing RTSP path: /camera
+[2026-01-07 23:00:39] [SUCCESS] RTSP path responds: /camera
+rtsp://10.0.0.227:8554/camera
+[2026-01-07 23:00:39] [INFO] Testing RTSP path: /main
+[2026-01-07 23:00:42] [SUCCESS] RTSP path responds: /main
+rtsp://10.0.0.227:8554/main
+[2026-01-07 23:00:42] [INFO] Testing RTSP path: /sub
+[2026-01-07 23:00:44] [SUCCESS] RTSP path responds: /sub
+rtsp://10.0.0.227:8554/sub
+[2026-01-07 23:00:44] [INFO] Testing RTSP path: /
+[2026-01-07 23:00:46] [SUCCESS] RTSP path responds: /
+rtsp://10.0.0.227:8554/
+[2026-01-07 23:00:46] [INFO] Testing RTSP path: /stream
+[2026-01-07 23:00:48] [SUCCESS] RTSP path responds: /stream
+rtsp://10.0.0.227:8554/stream
+[2026-01-07 23:00:48] [INFO] Testing RTSP path: /h264
+[2026-01-07 23:00:50] [SUCCESS] RTSP path responds: /h264
+rtsp://10.0.0.227:8554/h264
+[2026-01-07 23:00:50] [INFO] Testing RTSP path: /mjpeg
+[2026-01-07 23:00:52] [SUCCESS] RTSP path responds: /mjpeg
+rtsp://10.0.0.227:8554/mjpeg
+
+Total streams found: 13
+[2026-01-07 23:00:52] [INFO] Querying RTSP server information from device...
+
+=== RTSP Server Process Information ===
+invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+[2026-01-07 23:00:52] [INFO] Attempting RTSP DESCRIBE on common paths...
+
+=== RTSP DESCRIBE Results ===
+[2026-01-07 23:00:53] [INFO] Discovery complete. Results saved to: rtsp-discovery-20260107_230024.txt

@@ -1,0 +1,255 @@
+
+========================================
+Webcam Evaluation Report
+========================================
+
+[2026-01-07 23:38:09] [INFO] Starting comprehensive evaluation of 10.0.0.227
+[2026-01-07 23:38:09] [INFO] Output directory: webcam-evaluation-10.0.0.227-20260107_233809
+
+========================================
+Phase 1: Discovery and Analysis
+========================================
+
+[2026-01-07 23:38:09] [INFO] Running RTSP stream discovery...
+[2026-01-07 23:38:09] [INFO] Starting RTSP stream discovery on 10.0.0.227:8554
+[2026-01-07 23:38:09] [INFO] Checking if RTSP port 8554 is accessible...
+[2026-01-07 23:38:09] [SUCCESS] RTSP port 8554 is open
+[2026-01-07 23:38:09] [INFO] Testing common RTSP paths...
+[2026-01-07 23:38:09] [INFO] Testing RTSP path: /stream1
+[2026-01-07 23:38:12] [SUCCESS] RTSP path responds: /stream1
+[2026-01-07 23:38:12] [INFO] Testing RTSP path: /live
+[2026-01-07 23:38:14] [SUCCESS] RTSP path responds: /live
+[2026-01-07 23:38:14] [INFO] Testing RTSP path: /video
+[2026-01-07 23:38:16] [SUCCESS] RTSP path responds: /video
+[2026-01-07 23:38:16] [INFO] Testing RTSP path: /ch0
+[2026-01-07 23:38:18] [SUCCESS] RTSP path responds: /ch0
+[2026-01-07 23:38:18] [INFO] Testing RTSP path: /ch1
+[2026-01-07 23:38:20] [SUCCESS] RTSP path responds: /ch1
+[2026-01-07 23:38:20] [INFO] Testing RTSP path: /cam
+[2026-01-07 23:38:23] [SUCCESS] RTSP path responds: /cam
+[2026-01-07 23:38:23] [INFO] Testing RTSP path: /camera
+[2026-01-07 23:38:25] [SUCCESS] RTSP path responds: /camera
+[2026-01-07 23:38:25] [INFO] Testing RTSP path: /main
+[2026-01-07 23:38:27] [SUCCESS] RTSP path responds: /main
+[2026-01-07 23:38:27] [INFO] Testing RTSP path: /sub
+[2026-01-07 23:38:29] [SUCCESS] RTSP path responds: /sub
+[2026-01-07 23:38:29] [INFO] Testing RTSP path: /
+[2026-01-07 23:38:31] [SUCCESS] RTSP path responds: /
+[2026-01-07 23:38:31] [INFO] Testing RTSP path: /stream
+[2026-01-07 23:38:34] [SUCCESS] RTSP path responds: /stream
+[2026-01-07 23:38:34] [INFO] Testing RTSP path: /h264
+[2026-01-07 23:38:36] [SUCCESS] RTSP path responds: /h264
+[2026-01-07 23:38:36] [INFO] Testing RTSP path: /mjpeg
+[2026-01-07 23:38:38] [SUCCESS] RTSP path responds: /mjpeg
+[2026-01-07 23:38:38] [INFO] Querying RTSP server information from device...
+sed: -e expression #1, char 46: unknown option to `s'
+sed: -e expression #1, char 46: unknown option to `s'
+sed: -e expression #1, char 47: unknown option to `s'
+[2026-01-07 23:38:38] [INFO] Attempting RTSP DESCRIBE on common paths...
+[2026-01-07 23:38:39] [INFO] Discovery complete. Results saved to: webcam-evaluation-10.0.0.227-20260107_233809/rtsp-discovery.txt
+[2026-01-07 23:38:39] [SUCCESS] RTSP discovery complete
+[2026-01-07 23:38:39] [INFO] Discovered RTSP streams:
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/stream1
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/live
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/video
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/ch0
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/ch1
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/cam
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/camera
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/main
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/sub
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/stream
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/h264
+[2026-01-07 23:38:39] [INFO]   - rtsp://10.0.0.227:8554/mjpeg
+
+[2026-01-07 23:38:39] [INFO] Running webcam interface analysis...
+[2026-01-07 23:38:39] [INFO] Starting webcam interface analysis on 10.0.0.227
+[2026-01-07 23:38:39] [INFO] Analyzing apollo binary...
+sed: -e expression #1, char 49: unknown option to `s'
+sed: -e expression #1, char 49: unknown option to `s'
+sed: -e expression #1, char 50: unknown option to `s'
+sed: -e expression #1, char 47: unknown option to `s'
+sed: -e expression #1, char 47: unknown option to `s'
+sed: -e expression #1, char 48: unknown option to `s'
+[2026-01-07 23:38:39] [INFO] Extracting strings from apollo binary...
+sed: -e expression #1, char 64: unknown option to `s'
+sed: -e expression #1, char 64: unknown option to `s'
+sed: -e expression #1, char 65: unknown option to `s'
+[2026-01-07 23:38:39] [INFO] Analyzing video devices...
+sed: -e expression #1, char 43: unknown option to `s'
+sed: -e expression #1, char 43: unknown option to `s'
+sed: -e expression #1, char 44: unknown option to `s'
+[2026-01-07 23:38:39] [INFO] Analyzing apollo process...
+sed: -e expression #1, char 24: unknown option to `s'
+sed: -e expression #1, char 24: unknown option to `s'
+sed: -e expression #1, char 25: unknown option to `s'
+[2026-01-07 23:38:39] [SUCCESS] Found apollo process with PID: invalid command name ".*\"
+    while executing
+".*\\"
+    invoked from within
+"expect {
+    "login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Login:" {
+        send "root\r"
+        exp_continue
+    }
+    "Username..."
+sed: -e expression #1, char 41: unterminated `s' command
+sed: -e expression #1, char 41: unterminated `s' command
+sed: -e expression #1, char 42: unterminated `s' command
+[2026-01-07 23:38:39] [INFO] Getting process environment variables...
+sed: -e expression #1, char 41: unterminated `s' command
+sed: -e expression #1, char 41: unterminated `s' command
+sed: -e expression #1, char 42: unterminated `s' command
+[2026-01-07 23:38:39] [INFO] Checking open file descriptors...
+sed: -e expression #1, char 44: unterminated `s' command
+sed: -e expression #1, char 44: unterminated `s' command
+sed: -e expression #1, char 45: unterminated `s' command
+sed: -e expression #1, char 44: unterminated `s' command
+sed: -e expression #1, char 44: unterminated `s' command
+sed: -e expression #1, char 45: unterminated `s' command
+[2026-01-07 23:38:39] [INFO] Analyzing hardware interface...
+sed: -e expression #1, char 27: unknown option to `s'
+sed: -e expression #1, char 27: unknown option to `s'
+sed: -e expression #1, char 28: unknown option to `s'
+sed: -e expression #1, char 42: unknown option to `s'
+sed: -e expression #1, char 42: unknown option to `s'
+sed: -e expression #1, char 43: unknown option to `s'
+[2026-01-07 23:38:39] [INFO] Checking kernel messages for camera devices...
+sed: -e expression #1, char 43: unknown option to `s'
+sed: -e expression #1, char 43: unknown option to `s'
+sed: -e expression #1, char 44: unknown option to `s'
+sed: -e expression #1, char 57: unknown option to `s'
+sed: -e expression #1, char 57: unknown option to `s'
+sed: -e expression #1, char 58: unknown option to `s'
+[2026-01-07 23:38:39] [INFO] Analyzing how apollo accesses camera...
+sed: -e expression #1, char 24: unknown option to `s'
+sed: -e expression #1, char 24: unknown option to `s'
+sed: -e expression #1, char 25: unknown option to `s'
+sed: -e expression #1, char 41: unterminated `s' command
+sed: -e expression #1, char 41: unterminated `s' command
+sed: -e expression #1, char 42: unterminated `s' command
+sed: -e expression #1, char 60: unknown option to `s'
+sed: -e expression #1, char 60: unknown option to `s'
+sed: -e expression #1, char 61: unknown option to `s'
+[2026-01-07 23:38:39] [SUCCESS] Analysis complete. Results saved to: webcam-evaluation-10.0.0.227-20260107_233809/webcam-interface.txt
+[2026-01-07 23:38:39] [SUCCESS] Interface analysis complete
+[2026-01-07 23:38:39] [INFO] Video devices found (see webcam-evaluation-10.0.0.227-20260107_233809/webcam-interface.txt for details)
+
+[2026-01-07 23:38:39] [INFO] Running cloud endpoint discovery...
+[2026-01-07 23:38:39] [INFO] Starting cloud endpoint discovery on 10.0.0.227
+[2026-01-07 23:38:39] [INFO] Discovering active network connections...
+sed: -e expression #1, char 34: unknown option to `s'
+sed: -e expression #1, char 34: unknown option to `s'
+sed: -e expression #1, char 35: unknown option to `s'
+[2026-01-07 23:38:39] [INFO] Extracting cloud endpoints from connections...
+[2026-01-07 23:38:39] [INFO] Discovering DNS servers...
+sed: -e expression #1, char 60: unknown option to `s'
+sed: -e expression #1, char 60: unknown option to `s'
+sed: -e expression #1, char 61: unknown option to `s'
+[2026-01-07 23:38:39] [INFO] Discovering cloud endpoints from process environment...
+sed: -e expression #1, char 24: unknown option to `s'
+sed: -e expression #1, char 24: unknown option to `s'
+sed: -e expression #1, char 25: unknown option to `s'
+sed: -e expression #1, char 41: unterminated `s' command
+sed: -e expression #1, char 41: unterminated `s' command
+sed: -e expression #1, char 42: unterminated `s' command
+[2026-01-07 23:38:39] [INFO] Searching configuration files for cloud endpoints...
+sed: -e expression #1, char 139: unknown option to `s'
+sed: -e expression #1, char 139: unknown option to `s'
+sed: -e expression #1, char 140: unknown option to `s'
+[2026-01-07 23:38:39] [INFO] Checking for known cloud service IPs...
+sed: -e expression #1, char 51: unknown option to `s'
+sed: -e expression #1, char 51: unknown option to `s'
+sed: -e expression #1, char 52: unknown option to `s'
+[2026-01-07 23:38:39] [INFO] Generating summary...
+[2026-01-07 23:38:39] [SUCCESS] Found 1 unique cloud IP address(es)
+[2026-01-07 23:38:39] [SUCCESS] Discovery complete. Results saved to: webcam-evaluation-10.0.0.227-20260107_233809/cloud-endpoints.txt
+[2026-01-07 23:38:39] [SUCCESS] Cloud endpoint discovery complete
+[2026-01-07 23:38:39] [WARN] Cloud endpoints discovered:
+[2026-01-07 23:38:39] [WARN]   - 52.42.98.25
+
+========================================
+Phase 2: Connection Analysis
+========================================
+
+[2026-01-07 23:38:39] [INFO] Analyzing current connections...
+[2026-01-07 23:38:39] [INFO] Starting connection analysis on 10.0.0.227
+[2026-01-07 23:38:39] [INFO] Analyzing network connections...
+sed: -e expression #1, char 34: unknown option to `s'
+sed: -e expression #1, char 34: unknown option to `s'
+sed: -e expression #1, char 35: unknown option to `s'
+[2026-01-07 23:38:39] [SUCCESS] No cloud connections found
+[2026-01-07 23:38:39] [SUCCESS] Analysis complete. Results saved to: webcam-evaluation-10.0.0.227-20260107_233809/connection-analysis.txt
+[2026-01-07 23:38:39] [SUCCESS] Connection analysis complete
+[2026-01-07 23:38:39] [SUCCESS] No active cloud connections detected
+[2026-01-07 23:38:39] [INFO] Listening services: 0
+0
+[2026-01-07 23:38:39] [WARN] RTSP service not detected on port 8554
+
+========================================
+Phase 3: RTSP Setup Evaluation
+========================================
+
+[2026-01-07 23:38:39] [INFO] Evaluating RTSP server setup requirements...
+[2026-01-07 23:38:39] [SUCCESS] RTSP stream path discovered
+[2026-01-07 23:38:39] [INFO] Stream path: /stream1
+[2026-01-07 23:38:39] [WARN] Video device not detected - RTSP server may not be able to capture video
+[2026-01-07 23:38:39] [INFO] RTSP server setup status:
+[2026-01-07 23:38:39] [INFO]   - Stream path: /stream1
+[2026-01-07 23:38:39] [INFO]   - Video device: Not found
+[2026-01-07 23:38:39] [INFO]   - RTSP port: 8554
+
+========================================
+Phase 4: Cloud Blocking Evaluation
+========================================
+
+[2026-01-07 23:38:39] [INFO] Evaluating cloud blocking requirements...
+[2026-01-07 23:38:39] [WARN] Cloud IPs to block: 1
+[2026-01-07 23:38:39] [INFO]   - 52.42.98.25
+[2026-01-07 23:38:39] [INFO] 
+[2026-01-07 23:38:39] [INFO] Blocking methods available:
+[2026-01-07 23:38:39] [INFO]   1. iptables firewall rules (network level)
+[2026-01-07 23:38:39] [INFO]   2. Process-level blocking (application level)
+[2026-01-07 23:38:39] [INFO]   3. DNS blocking (prevent resolution)
+[2026-01-07 23:38:39] [SUCCESS] Cloud blocking appears active - no cloud connections detected
+
+========================================
+Phase 5: Monitoring Evaluation
+========================================
+
+[2026-01-07 23:38:39] [INFO] Evaluating monitoring capabilities...
+[2026-01-07 23:38:39] [SUCCESS] Real-time connection monitoring: Available
+[2026-01-07 23:38:39] [SUCCESS] One-time connection analysis: Available
+[2026-01-07 23:38:39] [SUCCESS] Cloud connection alerts: Available
+[2026-01-07 23:38:39] [SUCCESS] All monitoring tools are available
+
+========================================
+Evaluation Summary
+========================================
+
+Target: 10.0.0.227
+Evaluation Date: Wed Jan  7 11:38:39 PM EST 2026
+
+=== RTSP Stream Status ===
+Stream URL: rtsp://10.0.0.227:8554/stream1
+Status: DISCOVERED
+
+=== Cloud Connection Status ===
+Status: NO CLOUD CONNECTIONS
+
+=== Cloud Endpoints ===
+Discovered: 1 cloud endpoint(s)
+52.42.98.25
+
+=== Recommendations ===
+- Verify video device is accessible before setting up RTSP server
+
+Full reports available in: webcam-evaluation-10.0.0.227-20260107_233809
+[2026-01-07 23:38:40] [SUCCESS] Evaluation complete!
+[2026-01-07 23:38:40] [INFO] Summary report: webcam-evaluation-10.0.0.227-20260107_233809/evaluation-summary.txt
+[2026-01-07 23:38:40] [INFO] All outputs: webcam-evaluation-10.0.0.227-20260107_233809

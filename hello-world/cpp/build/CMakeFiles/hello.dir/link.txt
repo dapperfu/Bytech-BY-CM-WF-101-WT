@@ -1,0 +1,1 @@
+arm-linux-gnueabihf-g++ -march=armv6 -mtune=arm1176jzf-s -mfloat-abi=softfp CMakeFiles/hello.dir/hello.cpp.o -o /workspace/bin/hello

@@ -12,6 +12,7 @@ OUTPUT_DIR="${3:-}"
 TIMEOUT="${4:-2000}"
 ATTACK_INTERVAL="${5:-0}"
 EXECUTION_TIMEOUT="${6:-90}"  # Overall execution timeout in seconds (default: 90)
+VERBOSE="${7:-true}"  # Verbose logging (default: true)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CREDENTIALS_FILE="${SCRIPT_DIR}/wordlists/cameradar-credentials.json"
@@ -46,6 +47,7 @@ if [[ -z "$TARGET_IP" ]]; then
     echo "  timeout-ms          : Request timeout in milliseconds (default: 2000)"
     echo "  attack-interval-ms  : Delay between attacks in milliseconds (default: 0)"
     echo "  execution-timeout-sec: Overall execution timeout in seconds (default: 90)"
+    echo "  verbose             : Enable verbose logging (default: true)"
     exit 1
 fi
 
@@ -124,6 +126,12 @@ run_cameradar_scan() {
     log_info "Request Timeout: ${TIMEOUT}ms"
     log_info "Attack Interval: ${ATTACK_INTERVAL}ms"
     log_info "Execution Timeout: ${EXECUTION_TIMEOUT}s"
+    log_info "Verbose: ${VERBOSE}"
+    
+    if [[ "$VERBOSE" == "true" ]]; then
+        log_info "=== VERBOSE MODE ENABLED ==="
+        log_info "All cameradar output will be displayed in real-time"
+    fi
     
     # Build Docker run command
     local docker_cmd=(
@@ -152,6 +160,11 @@ run_cameradar_scan() {
         "-e" "CAMERADAR_LOGGING=true"
     )
     
+    # Force verbose output
+    if [[ "$VERBOSE" == "true" ]]; then
+        docker_cmd+=("-e" "CAMERADAR_VERBOSE=true")
+    fi
+    
     # Add custom dictionary paths if they exist
     if [[ -n "$CREDENTIALS_FILE" ]]; then
         docker_cmd+=("-e" "CAMERADAR_CUSTOM_CREDENTIALS=/tmp/custom_credentials.json")
@@ -168,33 +181,86 @@ run_cameradar_scan() {
         "-p" "$PORTS"
     )
     
-    # Add JSON output flag
-    docker_cmd+=("--json")
+    # Add verbose flag for detailed output
+    if [[ "$VERBOSE" == "true" ]]; then
+        docker_cmd+=("-v" "--verbose")
+    fi
+    
+    # Add debug flag for maximum verbosity
+    if [[ "$VERBOSE" == "true" ]]; then
+        docker_cmd+=("-d" "--debug")
+    fi
     
     log_info "Executing cameradar (max ${EXECUTION_TIMEOUT}s)..."
     log_info "Command: ${docker_cmd[*]}"
+    echo ""
     
     # Run cameradar and capture output with timeout
     local temp_json=$(mktemp)
     local temp_text=$(mktemp)
     
-    # Execute with JSON output and timeout
-    local timeout_exit=0
-    if timeout "${EXECUTION_TIMEOUT}" "${docker_cmd[@]}" > "$temp_json" 2> "$temp_text"; then
-        timeout_exit=0
+    # In verbose mode, show output in real-time
+    if [[ "$VERBOSE" == "true" ]]; then
+        log_info "=== STARTING CAMERADAR EXECUTION ==="
+        log_info "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+        echo ""
+        echo "--- Real-time cameradar output (stdout) ---"
+        
+        # Execute with JSON output and timeout, showing output in real-time
+        local timeout_exit=0
+        local start_time=$(date +%s)
+        
+        # Use tee to show output in real-time while also capturing it
+        if timeout "${EXECUTION_TIMEOUT}" "${docker_cmd[@]}" 2>&1 | tee >(grep -v "^$" > "$temp_text") | tee "$temp_json"; then
+            timeout_exit=0
+        else
+            timeout_exit=$?
+            local end_time=$(date +%s)
+            local elapsed=$((end_time - start_time))
+            
+            if [[ $timeout_exit -eq 124 ]]; then
+                echo ""
+                log_warn "=== TIMEOUT DETECTED ==="
+                log_warn "Execution exceeded ${EXECUTION_TIMEOUT} seconds (elapsed: ${elapsed}s)"
+                log_warn "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+                echo "TIMEOUT: Execution exceeded ${EXECUTION_TIMEOUT} seconds (elapsed: ${elapsed}s)" >> "$temp_text"
+            else
+                echo ""
+                log_error "=== EXECUTION FAILED ==="
+                log_error "Exit code: $timeout_exit"
+                log_error "Elapsed time: ${elapsed}s"
+                log_error "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+            fi
+        fi
+        
+        echo ""
+        echo "--- End of real-time output ---"
+        log_info "=== CAMERADAR EXECUTION COMPLETE ==="
+        log_info "Final timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
     else
-        timeout_exit=$?
-        if [[ $timeout_exit -eq 124 ]]; then
-            log_warn "Cameradar execution timed out after ${EXECUTION_TIMEOUT} seconds"
-            echo "TIMEOUT: Execution exceeded ${EXECUTION_TIMEOUT} seconds" >> "$temp_text"
+        # Non-verbose mode: execute silently
+        local timeout_exit=0
+        if timeout "${EXECUTION_TIMEOUT}" "${docker_cmd[@]}" > "$temp_json" 2> "$temp_text"; then
+            timeout_exit=0
+        else
+            timeout_exit=$?
+            if [[ $timeout_exit -eq 124 ]]; then
+                log_warn "Cameradar execution timed out after ${EXECUTION_TIMEOUT} seconds"
+                echo "TIMEOUT: Execution exceeded ${EXECUTION_TIMEOUT} seconds" >> "$temp_text"
+            fi
         fi
     fi
     
     # Process output even if timeout occurred (may have partial results)
     if [[ -s "$temp_json" ]] || [[ $timeout_exit -eq 0 ]]; then
         # Copy JSON output
-        cp "$temp_json" "$json_output"
-        log_success "JSON output saved to: $json_output"
+        if [[ -s "$temp_json" ]]; then
+            cp "$temp_json" "$json_output"
+            log_success "JSON output saved to: $json_output ($(wc -l < "$temp_json" | tr -d ' ') lines)"
+        else
+            log_warn "JSON output is empty"
+            echo "{}" > "$json_output"
+        fi
         
         # Generate human-readable text output
         {
@@ -204,16 +270,35 @@ run_cameradar_scan() {
             echo "Target: $TARGET_IP"
             echo "Ports: $PORTS"
             echo "Scan Date: $(date)"
+            echo "Request Timeout: ${TIMEOUT}ms"
+            echo "Attack Interval: ${ATTACK_INTERVAL}ms"
+            echo "Execution Timeout: ${EXECUTION_TIMEOUT}s"
+            echo "Verbose Mode: ${VERBOSE}"
+            echo ""
+            
+            if [[ $timeout_exit -eq 124 ]]; then
+                echo "WARNING: Execution timed out after ${EXECUTION_TIMEOUT} seconds"
+                echo ""
+            fi
+            
+            echo "------------------------------------------"
+            echo "Full Execution Output (stdout + stderr):"
+            echo "------------------------------------------"
+            if [[ -s "$temp_text" ]]; then
+                cat "$temp_text"
+            else
+                echo "(No stderr output captured)"
+            fi
             echo ""
             echo "------------------------------------------"
             echo "JSON Output (for parsing):"
             echo "------------------------------------------"
-            cat "$temp_json"
-            echo ""
-            echo "------------------------------------------"
-            echo "Execution Log:"
-            echo "------------------------------------------"
-            cat "$temp_text"
+            if [[ -s "$temp_json" ]]; then
+                cat "$temp_json"
+            else
+                echo "{}"
+                echo "(No JSON output - execution may have been interrupted)"
+            fi
         } > "$text_output"
         
         log_success "Text output saved to: $text_output"
