@@ -122,7 +122,7 @@ error() {
 run_docker() {
   local image="$1"
   shift
-  docker run --rm --net=host -v "${SCRIPT_DIR}:${SCRIPT_DIR}:ro" "$image" "$@"
+  docker run --rm --net=host -v "${SCRIPT_DIR}:${SCRIPT_DIR}:ro" -v "$(pwd):$(pwd)" -w "$(pwd)" "$image" "$@"
 }
 
 run_custom_docker() {
