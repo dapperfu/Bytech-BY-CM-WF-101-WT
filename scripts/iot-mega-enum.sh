@@ -76,7 +76,10 @@ for key, value in config.get('reporting', {}).items():
 
 # Export cameradar settings
 for key, value in config.get('cameradar', {}).items():
-    export_var(f"CAMERADAR_{key.upper()}", value)
+    if key == 'execution_timeout':
+        export_var(f"CAMERADAR_EXECUTION_TIMEOUT", value)
+    else:
+        export_var(f"CAMERADAR_{key.upper()}", value)
 EOF
 )"
   else
@@ -292,8 +295,11 @@ run_cameradar() {
     echo "--- JSON Output ---"
   } > "$text_output"
   
-  # Execute cameradar
-  if "${docker_cmd[@]}" > "$json_output" 2>> "$text_output"; then
+  # Execute cameradar with timeout (90 seconds default)
+  local execution_timeout="${CAMERADAR_EXECUTION_TIMEOUT:-90}"
+  log "Running cameradar with ${execution_timeout}s timeout..."
+  
+  if timeout "${execution_timeout}" "${docker_cmd[@]}" > "$json_output" 2>> "$text_output"; then
     {
       echo ""
       echo "--- Execution Complete ---"
@@ -301,12 +307,23 @@ run_cameradar() {
     } >> "$text_output"
     log "Cameradar scan completed"
   else
-    {
-      echo ""
-      echo "--- Execution Failed ---"
-      echo "Check execution log above for details"
-    } >> "$text_output"
-    log "Cameradar scan failed (check logs)"
+    local exit_code=$?
+    if [[ $exit_code -eq 124 ]]; then
+      {
+        echo ""
+        echo "--- Execution Timed Out ---"
+        echo "Cameradar exceeded ${execution_timeout}s timeout"
+        echo "Partial results may be available in JSON output"
+      } >> "$text_output"
+      log "Cameradar scan timed out after ${execution_timeout}s"
+    else
+      {
+        echo ""
+        echo "--- Execution Failed ---"
+        echo "Check execution log above for details"
+      } >> "$text_output"
+      log "Cameradar scan failed (check logs)"
+    fi
   fi
   
   return 0

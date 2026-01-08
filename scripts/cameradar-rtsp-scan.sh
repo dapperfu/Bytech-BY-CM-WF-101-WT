@@ -11,6 +11,7 @@ PORTS="${2:-554,5554,8554}"
 OUTPUT_DIR="${3:-}"
 TIMEOUT="${4:-2000}"
 ATTACK_INTERVAL="${5:-0}"
+EXECUTION_TIMEOUT="${6:-90}"  # Overall execution timeout in seconds (default: 90)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CREDENTIALS_FILE="${SCRIPT_DIR}/wordlists/cameradar-credentials.json"
@@ -30,19 +31,21 @@ fi
 
 # Validate inputs
 if [[ -z "$TARGET_IP" ]]; then
-    echo "Usage: $0 <target-ip> [ports] [output-dir] [timeout-ms] [attack-interval-ms]"
+    echo "Usage: $0 <target-ip> [ports] [output-dir] [timeout-ms] [attack-interval-ms] [execution-timeout-sec]"
     echo ""
     echo "Examples:"
     echo "  $0 10.0.0.227"
     echo "  $0 10.0.0.227 554,8554"
     echo "  $0 10.0.0.227 554,8554 ./output 3000 100"
+    echo "  $0 10.0.0.227 554,8554 ./output 3000 100 60"
     echo ""
     echo "Parameters:"
-    echo "  target-ip        : Target IP address or network range (required)"
-    echo "  ports            : Comma-separated RTSP ports (default: 554,5554,8554)"
-    echo "  output-dir       : Output directory for results (default: current directory)"
-    echo "  timeout-ms        : Request timeout in milliseconds (default: 2000)"
-    echo "  attack-interval-ms: Delay between attacks in milliseconds (default: 0)"
+    echo "  target-ip           : Target IP address or network range (required)"
+    echo "  ports               : Comma-separated RTSP ports (default: 554,5554,8554)"
+    echo "  output-dir          : Output directory for results (default: current directory)"
+    echo "  timeout-ms          : Request timeout in milliseconds (default: 2000)"
+    echo "  attack-interval-ms  : Delay between attacks in milliseconds (default: 0)"
+    echo "  execution-timeout-sec: Overall execution timeout in seconds (default: 90)"
     exit 1
 fi
 
@@ -118,8 +121,9 @@ run_cameradar_scan() {
     log_info "Starting cameradar RTSP penetration test"
     log_info "Target: $TARGET_IP"
     log_info "Ports: $PORTS"
-    log_info "Timeout: ${TIMEOUT}ms"
+    log_info "Request Timeout: ${TIMEOUT}ms"
     log_info "Attack Interval: ${ATTACK_INTERVAL}ms"
+    log_info "Execution Timeout: ${EXECUTION_TIMEOUT}s"
     
     # Build Docker run command
     local docker_cmd=(
@@ -167,15 +171,27 @@ run_cameradar_scan() {
     # Add JSON output flag
     docker_cmd+=("--json")
     
-    log_info "Executing cameradar..."
+    log_info "Executing cameradar (max ${EXECUTION_TIMEOUT}s)..."
     log_info "Command: ${docker_cmd[*]}"
     
-    # Run cameradar and capture output
+    # Run cameradar and capture output with timeout
     local temp_json=$(mktemp)
     local temp_text=$(mktemp)
     
-    # Execute with JSON output
-    if "${docker_cmd[@]}" > "$temp_json" 2> "$temp_text"; then
+    # Execute with JSON output and timeout
+    local timeout_exit=0
+    if timeout "${EXECUTION_TIMEOUT}" "${docker_cmd[@]}" > "$temp_json" 2> "$temp_text"; then
+        timeout_exit=0
+    else
+        timeout_exit=$?
+        if [[ $timeout_exit -eq 124 ]]; then
+            log_warn "Cameradar execution timed out after ${EXECUTION_TIMEOUT} seconds"
+            echo "TIMEOUT: Execution exceeded ${EXECUTION_TIMEOUT} seconds" >> "$temp_text"
+        fi
+    fi
+    
+    # Process output even if timeout occurred (may have partial results)
+    if [[ -s "$temp_json" ]] || [[ $timeout_exit -eq 0 ]]; then
         # Copy JSON output
         cp "$temp_json" "$json_output"
         log_success "JSON output saved to: $json_output"
@@ -220,7 +236,12 @@ run_cameradar_scan() {
         fi
         
         rm -f "$temp_json" "$temp_text"
-        return 0
+        if [[ $timeout_exit -eq 124 ]]; then
+            log_warn "Scan completed with timeout - check results for partial data"
+            return 2  # Timeout exit code
+        else
+            return 0
+        fi
     else
         log_error "Cameradar execution failed"
         {
@@ -231,7 +252,12 @@ run_cameradar_scan() {
             echo "Ports: $PORTS"
             echo "Scan Date: $(date)"
             echo ""
-            echo "Error occurred during execution:"
+            if [[ $timeout_exit -eq 124 ]]; then
+                echo "ERROR: Execution timed out after ${EXECUTION_TIMEOUT} seconds"
+            else
+                echo "Error occurred during execution:"
+            fi
+            echo ""
             cat "$temp_text"
         } > "$text_output"
         

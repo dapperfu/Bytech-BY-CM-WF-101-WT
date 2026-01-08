@@ -29,6 +29,7 @@ execution:
 cameradar:
   timeout: 2000  # Request timeout in milliseconds
   attack_interval: 0  # Delay between attacks in milliseconds (0 = no delay)
+  execution_timeout: 90  # Overall execution timeout in seconds (prevents hanging)
 
 vulnerability_testing:
   default_credentials:
