@@ -14,47 +14,16 @@ This device having the absolute worst security of any IoT device I've purchased 
 
 ## Security Assessment Summary
 
-This repository documents a comprehensive security assessment of the Bytech BY-CM-WF-101-WT indoor 1080p smart camera. The assessment was conducted using a custom IoT penetration testing suite to evaluate network exposure, service enumeration, credential security, and internal device configuration.
-
-The device was found to contain multiple critical security vulnerabilities, including exposed Telnet services with default credentials, unencrypted network protocols, and weak access controls. Full assessment reports and tool outputs are available in the repository.
+This repository documents a comprehensive security assessment of the Bytech BY-CM-WF-101-WT indoor 1080p smart camera. The device was found to contain multiple critical security vulnerabilities, including exposed Telnet services with default credentials, unencrypted network protocols, and weak access controls.
 
 ## Critical Findings
 
-### Network Exposure
-- **Telnet service (port 23)**: Exposed with default credentials
-- **HTTP service (port 843)**: Web interface accessible without authentication
-- **RTSP service (port 8554)**: Unencrypted video streaming protocol
-- **Additional services**: Ports 1300, 6668, 8699 identified and enumerated
+Detailed findings are documented in separate documents:
 
-### Default Credentials
-- **User account**: `user` / `user123`
-- **Root account**: `root` / `hellotuya`
-- Both accounts accessible via Telnet in AP mode and on local network
-
-### Assessment Reports
-
-**External Network Enumeration:**
-- [Full HTML Report](iot_enum_10.0.0.227_20260107_204102/report.html)
-- [Summary Report](iot_enum_10.0.0.227_20260107_204102/summary.txt)
-- [Default Credentials Test](iot_enum_10.0.0.227_20260107_204102/default_creds.txt)
-- [Telnet Connection Test](iot_enum_10.0.0.227_20260107_204102/telnet_test.txt)
-- [RTSP Connection Test](iot_enum_10.0.0.227_20260107_204102/rtsp_connection_test.txt)
-
-**Internal Device Analysis:**
-- [Internal Security Assessment](iot_internal_10.0.0.227_20260107_221109/index.html)
-- Filesystem enumeration, process analysis, network configuration, and security posture assessment
-
-### Methodology
-
-The assessment utilized a comprehensive IoT penetration testing suite including:
-- Network scanning (Nmap, Masscan)
-- Service enumeration and vulnerability scanning
-- Credential testing and brute-force analysis
-- Protocol-specific enumeration (RTSP, ONVIF, UPnP)
-- Internal device probing and filesystem analysis
-- Security configuration review
-
-Full tool documentation and usage instructions are provided in the sections below.
+- **[Network Exposure](docs/network-exposure.md)** - Exposed services and network security issues
+- **[Default Credentials](docs/default-credentials.md)** - Hardcoded credentials and access details
+- **[Assessment Reports](docs/assessment-reports.md)** - Links to all assessment reports and outputs
+- **[Security Methodology](docs/methodology.md)** - Assessment approach and tools used
 
 
 
