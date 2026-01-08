@@ -83,12 +83,158 @@ log_success() {
     log "SUCCESS" "$@"
 }
 
+log_warn() {
+    log "WARN" "$@"
+}
+
 #######################################
 # Base64 Encode File
 #######################################
 encode_file() {
     local file="$1"
     base64 -w 0 < "$file" || base64 < "$file" | tr -d '\n'
+}
+
+#######################################
+# Transfer File Directly (No Base64)
+#######################################
+transfer_file_direct() {
+    log_info "Transferring file directly (no base64 encoding required)..."
+    
+    # Read file content
+    local file_content
+    file_content=$(cat "$LOCAL_FILE")
+    
+    # Write expect script for direct transfer
+    local temp_expect
+    temp_expect=$(mktemp)
+    
+    cat > "$temp_expect" <<EXPECT_DIRECT_BASE
+set timeout TIMEOUT_VAL
+log_user 0
+
+spawn telnet TARGET_IP_VAL TELNET_PORT_VAL
+expect {
+    "login:" {
+        send "USERNAME_VAL\r"
+        exp_continue
+    }
+    "Login:" {
+        send "USERNAME_VAL\r"
+        exp_continue
+    }
+    "Username:" {
+        send "USERNAME_VAL\r"
+        exp_continue
+    }
+    "Password:" {
+        send "PASSWORD_VAL\r"
+        exp_continue
+    }
+    "password:" {
+        send "PASSWORD_VAL\r"
+        exp_continue
+    }
+    "# " {
+        # Got prompt, proceed
+    }
+    "\$ " {
+        # Got prompt, proceed
+    }
+    timeout {
+        puts "CONNECTION_TIMEOUT"
+        exit 1
+    }
+    eof {
+        puts "CONNECTION_CLOSED"
+        exit 1
+    }
+}
+
+# Write file directly using heredoc
+send "cat > REMOTE_FILE_VAL << 'ENDOFFILE'\r"
+expect {
+    "> " {
+        # File content will be sent here
+    }
+    timeout {
+        puts "HEREDOC_START_TIMEOUT"
+        exit 1
+    }
+}
+
+# Read and send file content line by line
+set f [open "LOCAL_FILE_PATH" r]
+while {[gets \$f line] >= 0} {
+    send "\$line\r"
+    expect {
+        "> " {
+            # Continue
+        }
+        timeout {
+            puts "LINE_TIMEOUT"
+            break
+        }
+    }
+}
+close \$f
+
+send "ENDOFFILE\r"
+expect {
+    "# " {}
+    "\$ " {}
+    timeout {
+        puts "HEREDOC_END_TIMEOUT"
+    }
+}
+
+# Make executable
+send "chmod +x REMOTE_FILE_VAL 2>/dev/null || true\r"
+expect {
+    "# " {}
+    "\$ " {}
+    timeout {}
+}
+
+# Verify file exists
+send "test -f REMOTE_FILE_VAL && echo 'FILE_EXISTS' || echo 'FILE_MISSING'\r"
+expect {
+    "FILE_EXISTS" {
+        puts "TRANSFER_SUCCESS"
+    }
+    "FILE_MISSING" {
+        puts "TRANSFER_FAILED"
+    }
+    timeout {
+        puts "VERIFY_TIMEOUT"
+    }
+}
+send "exit\r"
+expect eof
+EXPECT_DIRECT_BASE
+    
+    # Replace placeholders
+    sed -i "s|TIMEOUT_VAL|$COMMAND_TIMEOUT|g" "$temp_expect"
+    sed -i "s|TARGET_IP_VAL|$TARGET_IP|g" "$temp_expect"
+    sed -i "s|TELNET_PORT_VAL|$TELNET_PORT|g" "$temp_expect"
+    sed -i "s|USERNAME_VAL|$USERNAME|g" "$temp_expect"
+    sed -i "s|PASSWORD_VAL|$PASSWORD|g" "$temp_expect"
+    sed -i "s|REMOTE_FILE_VAL|$REMOTE_FILE|g" "$temp_expect"
+    sed -i "s|LOCAL_FILE_PATH|$LOCAL_FILE|g" "$temp_expect"
+    
+    local result
+    result=$(expect -f "$temp_expect" 2>&1)
+    
+    rm -f "$temp_expect"
+    
+    if echo "$result" | grep -q "TRANSFER_SUCCESS"; then
+        log_success "File transferred successfully: $REMOTE_FILE"
+        return 0
+    else
+        log_error "Direct transfer failed"
+        echo "$result" | grep -v "^spawn telnet" | grep -v "^Trying" | head -20
+        return 1
+    fi
 }
 
 #######################################
@@ -197,9 +343,32 @@ expect {
             }
         }
         
-        # Decode base64 file
-        send "base64 -d REMOTE_FILE_VAL.b64 > REMOTE_FILE_VAL 2>/dev/null || base64 -d REMOTE_FILE_VAL.b64 > REMOTE_FILE_VAL 2>&1\r"
+        # Check if base64 is available before trying to decode
+        send "command -v base64 >/dev/null 2>&1 && echo 'BASE64_AVAILABLE' || echo 'BASE64_NOT_AVAILABLE'\r"
         expect {
+            "BASE64_AVAILABLE" {
+                # Decode base64 file
+                send "base64 -d REMOTE_FILE_VAL.b64 > REMOTE_FILE_VAL 2>/dev/null || base64 -d REMOTE_FILE_VAL.b64 > REMOTE_FILE_VAL 2>&1\r"
+                expect {
+                    "# " {}
+                    "$ " {}
+                    timeout {}
+                }
+            }
+            "BASE64_NOT_AVAILABLE" {
+                # Base64 not available - signal that we need direct transfer
+                puts "BASE64_NOT_AVAILABLE"
+                send "rm -f REMOTE_FILE_VAL.b64\r"
+                expect {
+                    "# " {}
+                    "$ " {}
+                    timeout {}
+                }
+                # Exit this expect block - we'll handle direct transfer in main function
+                send "exit\r"
+                expect eof
+                return
+            }
             "# " {}
             "$ " {}
             timeout {}
@@ -276,7 +445,10 @@ EXPECT_SCRIPT_BASE
     
     rm -f "$temp_expect" "$temp_encoded"
     
-    if echo "$result" | grep -q "TRANSFER_SUCCESS"; then
+    if echo "$result" | grep -q "BASE64_NOT_AVAILABLE"; then
+        log_warn "base64 not available on remote device, using direct transfer method"
+        return 2  # Special return code for base64 not available
+    elif echo "$result" | grep -q "TRANSFER_SUCCESS"; then
         log_success "File transferred successfully: $REMOTE_FILE"
         return 0
     elif echo "$result" | grep -q "TRANSFER_FAILED\|FILE_MISSING"; then
@@ -300,7 +472,11 @@ main() {
     log_info "Local file: $LOCAL_FILE"
     log_info "Remote path: $REMOTE_FILE"
     
-    if transfer_file; then
+    # Try base64 method first, fallback to direct transfer if base64 not available
+    transfer_file
+    local transfer_result=$?
+    
+    if [ "$transfer_result" -eq 0 ]; then
         log_success "Transfer complete"
         log_info "File is available at: $REMOTE_FILE"
         log_info ""
@@ -311,9 +487,32 @@ main() {
         log_info ""
         log_info "Note: If script uses bash syntax and device only has sh, use 'sh' to run it"
         exit 0
+    elif [ "$transfer_result" -eq 2 ]; then
+        log_warn "base64 not available on remote device, using direct transfer method..."
+        if transfer_file_direct; then
+            log_success "Direct transfer complete"
+            log_info "File is available at: $REMOTE_FILE"
+            log_info ""
+            log_info "To execute on remote device:"
+            log_info "  sh $REMOTE_FILE"
+            exit 0
+        else
+            log_error "Direct transfer failed"
+            exit 1
+        fi
     else
-        log_error "Transfer failed"
-        exit 1
+        log_warn "Base64 transfer failed, trying direct transfer method..."
+        if transfer_file_direct; then
+            log_success "Direct transfer complete"
+            log_info "File is available at: $REMOTE_FILE"
+            log_info ""
+            log_info "To execute on remote device:"
+            log_info "  sh $REMOTE_FILE"
+            exit 0
+        else
+            log_error "All transfer methods failed"
+            exit 1
+        fi
     fi
 }
 
