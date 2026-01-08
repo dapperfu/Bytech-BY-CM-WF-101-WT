@@ -1,0 +1,46 @@
+# IoT Penetration Testing Configuration File
+# This file controls which tools are executed and how
+
+tools:
+  network_scanning:
+    nmap: true
+    masscan: true
+  service_enumeration:
+    nmap_scripts: true
+    nikto: true
+  credential_testing:
+    hydra: true
+    default_creds: true
+  exploitation:
+    metasploit: false  # Optional, more dangerous - disabled by default
+  protocol_specific:
+    rtsp: true
+    onvif: true
+    upnp: true
+    telnet: true
+    ssh: true
+    http: true
+
+execution:
+  mode: smart  # smart, parallel, sequential
+  max_parallel: 4
+
+vulnerability_testing:
+  default_credentials:
+    enabled: true
+    wordlists:
+      - scripts/wordlists/common-passwords.txt
+      - scripts/wordlists/camera-passwords.txt
+  known_cves:
+    enabled: true
+    database: scripts/data/cve-database.json
+  firmware_analysis:
+    enabled: true
+  protocol_exploits:
+    enabled: true
+
+reporting:
+  html: true
+  summary: true
+  json: false
+
