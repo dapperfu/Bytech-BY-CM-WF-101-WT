@@ -159,6 +159,7 @@ build_rust() {
         -v "$SCRIPT_DIR:/workspace" \
         -v "$SCRIPT_DIR/bin:/output" \
         -w /workspace/rust \
+        -e RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-static" \
         "$DOCKER_IMAGE" \
         sh -c "cargo build --target arm-unknown-linux-gnueabihf --release" 2>&1 | tee /tmp/build_rust.log; then
         log_info "Docker command completed"

@@ -7,3 +7,6 @@ edition = "2021"
 name = "hello"
 path = "src/main.rs"
 
+[target.arm-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"
+rustflags = ["-C", "link-arg=-static"]

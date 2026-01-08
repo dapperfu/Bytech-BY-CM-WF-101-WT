@@ -1,5 +1,5 @@
 CC = arm-linux-gnueabihf-gcc
-CFLAGS = -std=c89 -Wall -Wextra -O2
+CFLAGS = -std=c89 -Wall -Wextra -O2 -static
 TARGET = hello
 SRC = hello.c
 OUTPUT_DIR = ../bin
