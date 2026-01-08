@@ -16,6 +16,7 @@ fi
 echo "[*] Prefetching Docker images for IoT enumeration (Docker Hub only)"
 
 IMAGES=(
+  "ivre/client"
   "jess/masscan"
   "uzyexe/nmap"
   "aler9/rtsp-simple-server"
@@ -44,6 +45,7 @@ fi
 echo
 echo "[*] Warming containers"
 
+docker run --rm ivre/client nmap --version >/dev/null 2>&1 || true
 docker run --rm jess/masscan --version >/dev/null 2>&1 || true
 docker run --rm uzyexe/nmap --version >/dev/null 2>&1 || true
 docker run --rm aler9/rtsp-simple-server --help >/dev/null 2>&1 || true
