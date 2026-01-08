@@ -36,11 +36,23 @@ if [[ -z "$TARGET_IP" ]] || [[ -z "$LOCAL_FILE" ]]; then
     echo ""
     echo "The file will be base64 encoded and transferred via telnet."
     echo "Remote path defaults to /tmp/ if not specified."
+    echo ""
+    if [[ -n "$1" ]] && [[ ! "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "[!] Error: First argument must be target IP address (e.g., 10.0.0.227)"
+        echo "[!] You provided: $1"
+    fi
     exit 1
 fi
 
 if [[ ! -f "$LOCAL_FILE" ]]; then
     echo "[!] Error: Local file not found: $LOCAL_FILE"
+    echo ""
+    echo "Check that:"
+    echo "  1. The file path is correct"
+    echo "  2. You provided the target IP as the first argument"
+    echo "  3. All arguments are in the correct order"
+    echo ""
+    echo "Correct usage: $0 <target-ip> [username] [password] <local-file> [remote-path]"
     exit 1
 fi
 
