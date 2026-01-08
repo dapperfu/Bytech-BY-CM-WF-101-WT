@@ -138,7 +138,9 @@ run_nmap_scan() {
   log "Fast full-port scan (nmap -T5)"
   run_docker uzyexe/nmap \
     -p- -T5 --min-rate=1000 "$TARGET_IP" \
-    -oA "$OUTDIR/fastscan" || return 1
+    -oA "/tmp/fastscan" || return 1
+  
+  cp /tmp/fastscan.* "$OUTDIR/" 2>/dev/null || true
   
   PORTS=$(grep "/open/" "$OUTDIR/fastscan.nmap" 2>/dev/null | awk -F/ '{print $1}' | paste -sd, - || echo "")
   echo "$PORTS" > "$OUTDIR/open_ports.txt"
@@ -158,7 +160,9 @@ run_deep_enumeration() {
     -sS -sV -O -A \
     --script="default,safe,discovery,rtsp*" \
     -p "$ports" "$TARGET_IP" \
-    -oA "$OUTDIR/deep" || return 1
+    -oA "/tmp/deep" || return 1
+  
+  cp /tmp/deep.* "$OUTDIR/" 2>/dev/null || true
   return 0
 }
 
