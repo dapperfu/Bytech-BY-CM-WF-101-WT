@@ -15,6 +15,7 @@ tools:
     metasploit: false  # Optional, more dangerous - disabled by default
   protocol_specific:
     rtsp: true
+    cameradar: true
     onvif: true
     upnp: true
     telnet: true
@@ -24,6 +25,10 @@ tools:
 execution:
   mode: smart  # smart, parallel, sequential
   max_parallel: 4
+
+cameradar:
+  timeout: 2000  # Request timeout in milliseconds
+  attack_interval: 0  # Delay between attacks in milliseconds (0 = no delay)
 
 vulnerability_testing:
   default_credentials:
