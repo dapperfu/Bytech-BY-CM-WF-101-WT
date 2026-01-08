@@ -23,6 +23,7 @@ IMAGES=(
   "aler9/rtsp-simple-server"
   "frapsoft/nikto"
   "metasploitframework/metasploit-framework"
+  "ullaakut/cameradar"
 )
 
 FAILED=0
@@ -54,6 +55,7 @@ docker run --rm uzyexe/nmap --version >/dev/null 2>&1 || true
 docker run --rm aler9/rtsp-simple-server --help >/dev/null 2>&1 || true
 docker run --rm frapsoft/nikto -Version >/dev/null 2>&1 || true
 docker run --rm metasploitframework/metasploit-framework msfconsole --version >/dev/null 2>&1 || true
+docker run --rm --net=host ullaakut/cameradar --help >/dev/null 2>&1 || true
 
 #######################################
 # Build custom Docker images
