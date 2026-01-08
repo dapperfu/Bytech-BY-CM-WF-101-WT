@@ -140,8 +140,7 @@ mitm-venv:
 	@if command -v uv >/dev/null 2>&1; then \
 		echo "[*] Using UV package manager"; \
 		uv venv $(MITM_VENV_DIR); \
-		$(MITM_VENV_DIR)/bin/pip install --upgrade pip; \
-		$(MITM_VENV_DIR)/bin/pip install mitmproxy; \
+		uv pip install --python $(MITM_VENV_DIR)/bin/python mitmproxy; \
 	else \
 		echo "[!] Error: UV package manager not found"; \
 		echo "[*] Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh"; \
