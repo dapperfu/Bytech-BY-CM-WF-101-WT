@@ -62,15 +62,29 @@ test_with_ffprobe() {
     log_info "Testing RTSP connection with ffprobe..."
     echo ""
     
-    # Get stream information
+    # Try with TCP transport first (more reliable)
+    log_info "Attempting with TCP transport..."
     local probe_output
-    probe_output=$(timeout "$TIMEOUT" ffprobe -v error \
+    probe_output=$(timeout "$TIMEOUT" ffprobe -rtsp_transport tcp -v error \
         -show_entries stream=codec_name,codec_type,width,height,r_frame_rate,bit_rate \
         -show_entries format=format_name,duration,size,bit_rate \
         -of default=noprint_wrappers=1:nokey=0 \
+        -user_agent "YGTek RTSP Client" \
         "$RTSP_URL" 2>&1)
     
     local exit_code=$?
+    
+    # If TCP fails, try UDP
+    if [[ $exit_code -ne 0 ]] || ! echo "$probe_output" | grep -q "codec_name"; then
+        log_info "TCP transport failed, trying UDP transport..."
+        probe_output=$(timeout "$TIMEOUT" ffprobe -rtsp_transport udp -v error \
+            -show_entries stream=codec_name,codec_type,width,height,r_frame_rate,bit_rate \
+            -show_entries format=format_name,duration,size,bit_rate \
+            -of default=noprint_wrappers=1:nokey=0 \
+            -user_agent "YGTek RTSP Client" \
+            "$RTSP_URL" 2>&1)
+        exit_code=$?
+    fi
     
     if [[ $exit_code -eq 0 ]] && echo "$probe_output" | grep -q "codec_name"; then
         log_success "RTSP stream is accessible and readable!"
@@ -82,7 +96,8 @@ test_with_ffprobe() {
         # Try to get a frame to prove it's working
         log_info "Attempting to capture a frame..."
         local frame_output
-        frame_output=$(timeout "$TIMEOUT" ffmpeg -i "$RTSP_URL" -vframes 1 -f image2 -y /tmp/rtsp_test_frame.jpg 2>&1 || true)
+        frame_output=$(timeout "$TIMEOUT" ffmpeg -rtsp_transport tcp -i "$RTSP_URL" -vframes 1 -f image2 -y /tmp/rtsp_test_frame.jpg 2>&1 || \
+            timeout "$TIMEOUT" ffmpeg -rtsp_transport udp -i "$RTSP_URL" -vframes 1 -f image2 -y /tmp/rtsp_test_frame.jpg 2>&1 || true)
         
         if [[ -f /tmp/rtsp_test_frame.jpg ]]; then
             local frame_size
@@ -96,7 +111,11 @@ test_with_ffprobe() {
         fi
     else
         log_error "ffprobe failed or stream not accessible"
-        echo "$probe_output" | tail -10
+        log_info "Error details:"
+        echo "$probe_output" | grep -E "(error|Error|ERROR|Failed|failed|Invalid)" | head -5
+        echo ""
+        log_info "Full error output:"
+        echo "$probe_output" | tail -15
         return 1
     fi
 }
@@ -109,9 +128,16 @@ test_with_ffmpeg() {
     log_info "Testing RTSP connection with ffmpeg..."
     echo ""
     
-    # Try to read stream for a few seconds
+    # Try with TCP transport first
+    log_info "Attempting with TCP transport..."
     local ffmpeg_output
-    ffmpeg_output=$(timeout "$TIMEOUT" ffmpeg -i "$RTSP_URL" -t 2 -f null - 2>&1 || true)
+    ffmpeg_output=$(timeout "$TIMEOUT" ffmpeg -rtsp_transport tcp -user_agent "YGTek RTSP Client" -i "$RTSP_URL" -t 2 -f null - 2>&1 || true)
+    
+    # If TCP fails, try UDP
+    if ! echo "$ffmpeg_output" | grep -qiE "Stream.*Video|Stream.*Audio|Duration"; then
+        log_info "TCP transport failed, trying UDP transport..."
+        ffmpeg_output=$(timeout "$TIMEOUT" ffmpeg -rtsp_transport udp -user_agent "YGTek RTSP Client" -i "$RTSP_URL" -t 2 -f null - 2>&1 || true)
+    fi
     
     if echo "$ffmpeg_output" | grep -qiE "Stream.*Video|Stream.*Audio|Duration"; then
         log_success "ffmpeg can read the RTSP stream!"
@@ -122,6 +148,8 @@ test_with_ffmpeg() {
         return 0
     else
         log_warn "ffmpeg test inconclusive"
+        log_info "Error details:"
+        echo "$ffmpeg_output" | grep -E "(error|Error|ERROR|Failed|failed|Invalid)" | head -5
         return 1
     fi
 }
@@ -323,12 +351,23 @@ main() {
         return 0
     else
         log_error "RTSP connection test failed (all $test_count tests failed)"
-        log_info "Possible issues:"
-        log_info "  - RTSP URL is incorrect"
-        log_info "  - RTSP server is not running"
-        log_info "  - Network connectivity issues"
-        log_info "  - Authentication required"
-        log_info "  - Firewall blocking connection"
+        echo ""
+        log_info "Diagnosis:"
+        log_info "  The RTSP server (YGTek RTSP Server 2.0) responds to OPTIONS requests"
+        log_info "  but closes connections during DESCRIBE/SETUP phase."
+        echo ""
+        log_info "Possible causes:"
+        log_info "  1. Stream path requires activation (stream may not be active until requested)"
+        log_info "  2. Authentication required (username/password in URL)"
+        log_info "  3. Server expects specific RTSP workflow or headers"
+        log_info "  4. Stream is not available (camera not initialized or stream not started)"
+        log_info "  5. Network/firewall issues preventing full RTSP handshake"
+        echo ""
+        log_info "Recommendations:"
+        log_info "  - Try with authentication: rtsp://user:pass@10.0.0.227:8554/stream1"
+        log_info "  - Check if stream needs to be activated via web interface or API"
+        log_info "  - Verify camera is fully initialized and streaming"
+        log_info "  - Check server logs on device for more details"
         return 1
     fi
 }
