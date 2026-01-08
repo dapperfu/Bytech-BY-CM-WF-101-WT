@@ -49,3 +49,22 @@ reporting:
   summary: true
   json: false
 
+telnet:
+  default_port: 23
+  default_username: root
+  default_password: ""
+  default_timeout: 30.0
+  
+  service:
+    max_connections: 10
+    health_check_interval: 30.0
+    reconnect_delay: 2.0
+    health_check_timeout: 5.0
+  
+  logging:
+    level: INFO
+    json: false
+    log_file: null
+  
+  devices: {}
+

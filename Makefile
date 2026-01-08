@@ -202,6 +202,59 @@ mitm-clean:
 	@echo "[+] MITMproxy cleanup complete"
 
 #######################################
+# Telnet Framework
+#######################################
+TELNET_VENV_DIR ?= .venv-telnet
+TELNET_API_PORT ?= 8000
+
+telnet-venv:
+	@echo "[*] Creating telnet framework virtual environment..."
+	@if command -v uv >/dev/null 2>&1; then \
+		echo "[*] Using UV package manager"; \
+		uv venv $(TELNET_VENV_DIR); \
+		$(TELNET_VENV_DIR)/bin/pip install --upgrade pip; \
+		$(TELNET_VENV_DIR)/bin/pip install -e .; \
+	else \
+		echo "[!] Error: UV package manager not found"; \
+		echo "[*] Install UV: curl -LsSf https://astral.sh/uv/install.sh | sh"; \
+		exit 1; \
+	fi
+	@echo "[+] Telnet framework virtual environment created"
+
+telnet-service: telnet-venv
+	@if [ ! -d "$(TELNET_VENV_DIR)" ]; then \
+		echo "[!] Error: Virtual environment not found"; \
+		echo "[*] Run 'make telnet-venv' first"; \
+		exit 1; \
+	fi
+	@echo "[*] Starting telnet service daemon..."
+	@$(TELNET_VENV_DIR)/bin/python -m lib.telnet.daemon start
+
+telnet-api: telnet-venv
+	@if [ ! -d "$(TELNET_VENV_DIR)" ]; then \
+		echo "[!] Error: Virtual environment not found"; \
+		echo "[*] Run 'make telnet-venv' first"; \
+		exit 1; \
+	fi
+	@echo "[*] Starting telnet REST API on port $(TELNET_API_PORT)..."
+	@echo "[*] API docs: http://localhost:$(TELNET_API_PORT)/docs"
+	@$(TELNET_VENV_DIR)/bin/python -m lib.telnet.api.app
+
+test-telnet: telnet-venv
+	@if [ ! -d "$(TELNET_VENV_DIR)" ]; then \
+		echo "[!] Error: Virtual environment not found"; \
+		echo "[*] Run 'make telnet-venv' first"; \
+		exit 1; \
+	fi
+	@echo "[*] Running telnet framework tests..."
+	@$(TELNET_VENV_DIR)/bin/pytest tests/ -v --cov=lib.telnet --cov-report=term-missing
+
+telnet-stop:
+	@echo "[*] Stopping telnet service..."
+	@$(TELNET_VENV_DIR)/bin/python -m lib.telnet.daemon stop || true
+	@echo "[+] Telnet service stopped"
+
+#######################################
 # All-in-one: Prefetch, Enum, Probe
 #######################################
 all: prefetch enum probe
