@@ -98,6 +98,7 @@ execute_command() {
     
     expect_script=$(cat <<EOF
 set timeout $timeout
+log_user 0
 spawn telnet $TARGET_IP $TELNET_PORT
 expect {
     "login:" {
@@ -120,45 +121,16 @@ expect {
         send "$PASSWORD\r"
         exp_continue
     }
-    "# " {
+    -re "\\\[.*\\\]# |# |\\\$ " {
         send "$cmd\r"
         expect {
-            "# " {
-                set output \$expect_out(buffer)
-                puts \$output
-                send "exit\r"
-                expect eof
-            }
-            "$ " {
-                set output \$expect_out(buffer)
-                puts \$output
+            -re "\\\[.*\\\]# |# |\\\$ " {
+                puts \$expect_out(buffer)
                 send "exit\r"
                 expect eof
             }
             timeout {
-                puts "COMMAND_TIMEOUT"
-                send "\x03"
-                send "exit\r"
-                expect eof
-            }
-        }
-    }
-    "$ " {
-        send "$cmd\r"
-        expect {
-            "# " {
-                set output \$expect_out(buffer)
-                puts \$output
-                send "exit\r"
-                expect eof
-            }
-            "$ " {
-                set output \$expect_out(buffer)
-                puts \$output
-                send "exit\r"
-                expect eof
-            }
-            timeout {
+                puts \$expect_out(buffer)
                 puts "COMMAND_TIMEOUT"
                 send "\x03"
                 send "exit\r"
@@ -167,20 +139,27 @@ expect {
         }
     }
     "BusyBox" {
-        expect "# "
-        send "$cmd\r"
         expect {
-            "# " {
-                set output \$expect_out(buffer)
-                puts \$output
-                send "exit\r"
-                expect eof
+            -re "\\\[.*\\\]# |# |\\\$ " {
+                send "$cmd\r"
+                expect {
+                    -re "\\\[.*\\\]# |# |\\\$ " {
+                        puts \$expect_out(buffer)
+                        send "exit\r"
+                        expect eof
+                    }
+                    timeout {
+                        puts \$expect_out(buffer)
+                        puts "COMMAND_TIMEOUT"
+                        send "\x03"
+                        send "exit\r"
+                        expect eof
+                    }
+                }
             }
             timeout {
-                puts "COMMAND_TIMEOUT"
-                send "\x03"
-                send "exit\r"
-                expect eof
+                puts "PROMPT_TIMEOUT"
+                exit 1
             }
         }
     }
@@ -197,14 +176,44 @@ EOF
 )
     
     local result
+    local temp_output
+    temp_output=$(mktemp)
+    
+    # Run expect and capture output
+    echo "$expect_script" | expect 2>&1 > "$temp_output"
+    
+    # Process output: remove spawn messages, connection messages, prompts, and clean up
+    result=$(cat "$temp_output" | \
+        grep -v "^spawn telnet" | \
+        grep -v "^Trying" | \
+        grep -v "^Connected to" | \
+        grep -v "^Escape character" | \
+        grep -v "^login:" | \
+        grep -v "^Login:" | \
+        grep -v "^Username:" | \
+        grep -v "^Password:" | \
+        grep -v "^password:" | \
+        grep -v "^BusyBox" | \
+        grep -v "^Enter 'help'" | \
+        sed 's/\r//g' | \
+        sed 's/^\[.*\]# //' | \
+        sed 's/^# //' | \
+        sed 's/^\$ //' | \
+        sed "s/^${cmd}$//" | \
+        sed "s/^${cmd}\r$//" | \
+        sed '/^$/d')
+    
+    # Remove the command echo if it appears at the start
+    result=$(echo "$result" | sed "1s/^${cmd}\r\?$//" | sed '/^$/d')
+    
     if [[ -n "$output_file" ]]; then
-        result=$(echo "$expect_script" | expect 2>&1 | grep -v "^spawn" | grep -v "^$" | tail -n +2)
         echo "$result" > "$output_file"
         echo "$result"
     else
-        result=$(echo "$expect_script" | expect 2>&1 | grep -v "^spawn" | grep -v "^$" | tail -n +2)
         echo "$result"
     fi
+    
+    rm -f "$temp_output"
 }
 
 execute_command_silent() {
