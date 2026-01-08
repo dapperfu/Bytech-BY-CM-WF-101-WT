@@ -109,144 +109,52 @@ transfer_file() {
     
     log_info "Transferring in $total_chunks chunks..."
     
-    local expect_script
-    expect_script=$(cat <<EOF
-set timeout $COMMAND_TIMEOUT
+    # Write expect script to temp file with encoded content properly escaped
+    local temp_expect
+    temp_expect=$(mktemp)
+    local temp_encoded
+    temp_encoded=$(mktemp)
+    echo "$encoded_content" > "$temp_encoded"
+    
+    # Create expect script that reads encoded content from file
+    # Use simpler pattern matching to avoid regex issues
+    cat > "$temp_expect" <<'EXPECT_SCRIPT_BASE'
+set timeout TIMEOUT_VAL
 log_user 0
-spawn telnet $TARGET_IP $TELNET_PORT
+
+# Read encoded content from file
+set f [open "ENCODED_FILE" r]
+set encoded_content [read $f]
+close $f
+set encoded [string trim $encoded_content]
+
+spawn telnet TARGET_IP_VAL TELNET_PORT_VAL
 expect {
     "login:" {
-        send "$USERNAME\r"
+        send "USERNAME_VAL\r"
         exp_continue
     }
     "Login:" {
-        send "$USERNAME\r"
+        send "USERNAME_VAL\r"
         exp_continue
     }
     "Username:" {
-        send "$USERNAME\r"
+        send "USERNAME_VAL\r"
         exp_continue
     }
     "Password:" {
-        send "$PASSWORD\r"
+        send "PASSWORD_VAL\r"
         exp_continue
     }
     "password:" {
-        send "$PASSWORD\r"
+        send "PASSWORD_VAL\r"
         exp_continue
     }
-    -re "\\\[.*\\\]# |# |\\\$ " {
-        # Create remote file
-        send "cat > $REMOTE_FILE.b64 << 'ENDOFFILE'\r"
-        expect {
-            -re "> " {
-                # Send base64 content in chunks
-                set encoded "$encoded_content"
-                set len [string length \$encoded]
-                set chunk_size 1000
-                set i 0
-                while {\$i < \$len} {
-                    set chunk [string range \$encoded \$i [expr \$i + \$chunk_size - 1]]
-                    send "\$chunk\r"
-                    set i [expr \$i + \$chunk_size]
-                    expect {
-                        -re "> " {
-                            # Continue
-                        }
-                        timeout {
-                            puts "CHUNK_TIMEOUT"
-                            break
-                        }
-                    }
-                }
-                send "ENDOFFILE\r"
-                expect -re "\\\[.*\\\]# |# |\\\$ "
-                
-                # Decode base64 file
-                send "base64 -d $REMOTE_FILE.b64 > $REMOTE_FILE 2>/dev/null || base64 -d $REMOTE_FILE.b64 > $REMOTE_FILE 2>&1\r"
-                expect -re "\\\[.*\\\]# |# |\\\$ "
-                
-                # Remove base64 file
-                send "rm -f $REMOTE_FILE.b64\r"
-                expect -re "\\\[.*\\\]# |# |\\\$ "
-                
-                # Make executable if it's a script
-                send "chmod +x $REMOTE_FILE 2>/dev/null || true\r"
-                expect -re "\\\[.*\\\]# |# |\\\$ "
-                
-                # Verify file exists
-                send "test -f $REMOTE_FILE && echo 'FILE_EXISTS' || echo 'FILE_MISSING'\r"
-                expect {
-                    "FILE_EXISTS" {
-                        puts "TRANSFER_SUCCESS"
-                    }
-                    "FILE_MISSING" {
-                        puts "TRANSFER_FAILED"
-                    }
-                    timeout {
-                        puts "VERIFY_TIMEOUT"
-                    }
-                }
-                send "exit\r"
-                expect eof
-            }
-            timeout {
-                puts "HEREDOC_TIMEOUT"
-                send "\x03"
-                send "exit\r"
-                expect eof
-            }
-        }
+    "# " {
+        # Got prompt, proceed
     }
-    "BusyBox" {
-        expect {
-            -re "\\\[.*\\\]# |# |\\\$ " {
-                # BusyBox version - use printf instead of heredoc
-                send "rm -f $REMOTE_FILE.b64\r"
-                expect -re "\\\[.*\\\]# |# |\\\$ "
-                
-                # Use echo to write base64 (may need to split)
-                set encoded "$encoded_content"
-                set len [string length \$encoded]
-                set chunk_size 500
-                set i 0
-                while {\$i < \$len} {
-                    set chunk [string range \$encoded \$i [expr \$i + \$chunk_size - 1]]
-                    if {\$i == 0} {
-                        send "echo -n '\$chunk' > $REMOTE_FILE.b64\r"
-                    } else {
-                        send "echo -n '\$chunk' >> $REMOTE_FILE.b64\r"
-                    }
-                    expect -re "\\\[.*\\\]# |# |\\\$ "
-                    set i [expr \$i + \$chunk_size]
-                }
-                
-                # Decode
-                send "base64 -d $REMOTE_FILE.b64 > $REMOTE_FILE 2>/dev/null || base64 -d $REMOTE_FILE.b64 > $REMOTE_FILE 2>&1\r"
-                expect -re "\\\[.*\\\]# |# |\\\$ "
-                
-                # Cleanup and verify
-                send "rm -f $REMOTE_FILE.b64\r"
-                expect -re "\\\[.*\\\]# |# |\\\$ "
-                send "chmod +x $REMOTE_FILE 2>/dev/null || true\r"
-                expect -re "\\\[.*\\\]# |# |\\\$ "
-                send "test -f $REMOTE_FILE && echo 'FILE_EXISTS' || echo 'FILE_MISSING'\r"
-                expect {
-                    "FILE_EXISTS" {
-                        puts "TRANSFER_SUCCESS"
-                    }
-                    "FILE_MISSING" {
-                        puts "TRANSFER_FAILED"
-                    }
-                }
-                send "exit\r"
-                expect eof
-            }
-            timeout {
-                puts "PROMPT_TIMEOUT"
-                exit 1
-            }
-        }
+    "$ " {
+        # Got prompt, proceed
     }
     timeout {
         puts "CONNECTION_TIMEOUT"
@@ -257,18 +165,100 @@ expect {
         exit 1
     }
 }
-EOF
-)
+
+# Create remote file using heredoc
+send "cat > REMOTE_FILE_VAL.b64 << 'ENDOFFILE'\r"
+expect {
+    "> " {
+        # Send base64 content in chunks
+        set len [string length $encoded]
+        set chunk_size 1000
+        set i 0
+        while {$i < $len} {
+            set chunk [string range $encoded $i [expr $i + $chunk_size - 1]]
+            send "$chunk\r"
+            set i [expr $i + $chunk_size]
+            expect {
+                "> " {
+                    # Continue
+                }
+                timeout {
+                    puts "CHUNK_TIMEOUT"
+                    break
+                }
+            }
+        }
+        send "ENDOFFILE\r"
+        expect {
+            "# " {}
+            "$ " {}
+            timeout {
+                puts "HEREDOC_END_TIMEOUT"
+            }
+        }
+        
+        # Decode base64 file
+        send "base64 -d REMOTE_FILE_VAL.b64 > REMOTE_FILE_VAL 2>/dev/null || base64 -d REMOTE_FILE_VAL.b64 > REMOTE_FILE_VAL 2>&1\r"
+        expect {
+            "# " {}
+            "$ " {}
+            timeout {}
+        }
+        
+        # Remove base64 file
+        send "rm -f REMOTE_FILE_VAL.b64\r"
+        expect {
+            "# " {}
+            "$ " {}
+            timeout {}
+        }
+        
+        # Make executable if it's a script
+        send "chmod +x REMOTE_FILE_VAL 2>/dev/null || true\r"
+        expect {
+            "# " {}
+            "$ " {}
+            timeout {}
+        }
+        
+        # Verify file exists
+        send "test -f REMOTE_FILE_VAL && echo 'FILE_EXISTS' || echo 'FILE_MISSING'\r"
+        expect {
+            "FILE_EXISTS" {
+                puts "TRANSFER_SUCCESS"
+            }
+            "FILE_MISSING" {
+                puts "TRANSFER_FAILED"
+            }
+            timeout {
+                puts "VERIFY_TIMEOUT"
+            }
+        }
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "HEREDOC_TIMEOUT"
+        send "\x03"
+        send "exit\r"
+        expect eof
+    }
+}
+EXPECT_SCRIPT_BASE
     
-    # Replace encoded_content in expect script
-    local temp_expect
-    temp_expect=$(mktemp)
-    echo "$expect_script" | sed "s|set encoded \".*\"|set encoded \"$encoded_content\"|" > "$temp_expect"
+    # Replace placeholders in expect script
+    sed -i "s|TIMEOUT_VAL|$COMMAND_TIMEOUT|g" "$temp_expect"
+    sed -i "s|ENCODED_FILE|$temp_encoded|g" "$temp_expect"
+    sed -i "s|TARGET_IP_VAL|$TARGET_IP|g" "$temp_expect"
+    sed -i "s|TELNET_PORT_VAL|$TELNET_PORT|g" "$temp_expect"
+    sed -i "s|USERNAME_VAL|$USERNAME|g" "$temp_expect"
+    sed -i "s|PASSWORD_VAL|$PASSWORD|g" "$temp_expect"
+    sed -i "s|REMOTE_FILE_VAL|$REMOTE_FILE|g" "$temp_expect"
     
     local result
     result=$(expect -f "$temp_expect" 2>&1)
     
-    rm -f "$temp_expect"
+    rm -f "$temp_expect" "$temp_encoded"
     
     if echo "$result" | grep -q "TRANSFER_SUCCESS"; then
         log_success "File transferred successfully: $REMOTE_FILE"
