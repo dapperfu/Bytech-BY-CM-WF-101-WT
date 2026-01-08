@@ -1,3 +1,32 @@
+# Hacking a Menards WebCam.
+
+On my most recent trip to Menards I happened upon a $[10, "1080p" webcam](https://www.menards.com/main/electrical/alarms-security-systems/security-cameras/bytech-reg-indoor-1080p-smart-camera/by-cm-wf-101-wt/p-1642874359318832-c-1530022081634.htm).
+
+[As is tradition](https://github.com/dapperfu/hacking) I like to see if they have rtsp, simple things.
+
+Thankfully [AzureADTrent/Bytech-BY-CM-WF-101-WT(https://github.com/AzureADTrent/Bytech-BY-CM-WF-101-WT) had already posted the important bits. (Original Read Me Below).
+
+This device having the absolute worst security of any IoT device I've purchased since 2019 (Telnet, in 2026?), made it a great candidate for "Vibe Hacking".
+
+- <This comment made by human>
+
+--------------- Pure Vibe'd ReadMe  --------------- 
+
+# Cursor section.
+
+
+
+
+
+
+
+
+
+
+
+
+--------------- Original ReadMe Cursor Do Not Edit Below --------------- 
+
 # Bytech-BY-CM-WF-101-WT
 This is repo for keeping track of the Bytech security camera BY-CM-WF-101-WT details found during testing of the hardware.
 
