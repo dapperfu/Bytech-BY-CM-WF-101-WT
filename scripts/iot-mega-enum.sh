@@ -142,7 +142,7 @@ run_nmap_scan() {
   
   cp /tmp/fastscan.* "$OUTDIR/" 2>/dev/null || true
   
-  PORTS=$(grep "/open/" "$OUTDIR/fastscan.nmap" 2>/dev/null | awk -F/ '{print $1}' | paste -sd, - || echo "")
+  PORTS=$(grep -E "^[0-9]+/tcp.*open|^[0-9]+/udp.*open" "$OUTDIR/fastscan.nmap" 2>/dev/null | awk '{print $1}' | cut -d/ -f1 | paste -sd, - || echo "")
   echo "$PORTS" > "$OUTDIR/open_ports.txt"
   log "Open ports: $PORTS"
   
@@ -158,7 +158,7 @@ run_deep_enumeration() {
   log "Deep service enumeration"
   run_docker uzyexe/nmap \
     -sS -sV -O -A \
-    --script="default,safe,discovery,rtsp*" \
+    --script default,safe,discovery,rtsp-url-brute,rtsp-methods \
     -p "$ports" "$TARGET_IP" \
     -oA "/tmp/deep" || return 1
   
@@ -191,7 +191,8 @@ run_rtsp_scan() {
       if echo "$PORTS" | grep -q "$port"; then
         echo "Testing RTSP on port $port"
         run_docker uzyexe/nmap \
-          --script rtsp-url-brute,rtsp-methods \
+          --script rtsp-url-brute \
+          --script rtsp-methods \
           -p "$port" "$TARGET_IP" \
           -oN "$OUTDIR/rtsp_${port}.txt" || true
       fi
