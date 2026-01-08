@@ -1,4 +1,4 @@
-.PHONY: help prefetch enum probe serve clean
+.PHONY: help prefetch enum probe cameradar serve clean
 
 # Default target
 help:
@@ -8,6 +8,7 @@ help:
 	@echo "  make prefetch              - Prefetch Docker images for enumeration"
 	@echo "  make enum TARGET_IP=IP     - Run external enumeration (requires TARGET_IP)"
 	@echo "  make probe TARGET_IP=IP    - Run internal device probing (requires TARGET_IP)"
+	@echo "  make cameradar TARGET_IP=IP - Run cameradar RTSP penetration test (requires TARGET_IP)"
 	@echo "  make serve                 - Serve latest generated directory with Python HTTP server"
 	@echo "  make clean                 - Clean generated directories"
 	@echo ""
@@ -15,6 +16,7 @@ help:
 	@echo "  make prefetch"
 	@echo "  make enum TARGET_IP=10.0.0.227"
 	@echo "  make probe TARGET_IP=10.0.0.227 USERNAME=root PASSWORD=hellotuya"
+	@echo "  make cameradar TARGET_IP=10.0.0.227"
 	@echo "  make serve"
 
 # Configuration
@@ -24,12 +26,17 @@ PASSWORD ?= hellotuya
 INTERFACE ?= eth0
 CONFIG_FILE ?= scripts/iot-config.yaml
 PORT ?= 8000
+PORTS ?= 554,5554,8554
+TIMEOUT ?= 2000
+ATTACK_INTERVAL ?= 0
+OUTPUT_DIR ?=
 
 # Script paths
 SCRIPT_DIR := scripts
 PREFETCH_SCRIPT := $(SCRIPT_DIR)/iot-mega-enum-prefetch.sh
 ENUM_SCRIPT := $(SCRIPT_DIR)/iot-mega-enum.sh
 PROBE_SCRIPT := $(SCRIPT_DIR)/iot-internal-probe.sh
+CAMERADAR_SCRIPT := $(SCRIPT_DIR)/cameradar-rtsp-scan.sh
 
 #######################################
 # Prefetch Docker Images
@@ -65,6 +72,19 @@ probe:
 	@echo "[*] Username: $(USERNAME)"
 	@bash $(PROBE_SCRIPT) $(TARGET_IP) $(USERNAME) $(PASSWORD)
 	@echo "[+] Internal probing complete"
+
+#######################################
+# Cameradar RTSP Penetration Test
+#######################################
+cameradar:
+	@if [ -z "$(TARGET_IP)" ]; then \
+		echo "[!] Error: TARGET_IP is required"; \
+		echo "Usage: make cameradar TARGET_IP=<ip-address> [PORTS=<ports>] [OUTPUT_DIR=<dir>]"; \
+		exit 1; \
+	fi
+	@echo "[*] Starting cameradar RTSP penetration test on $(TARGET_IP)..."
+	@bash $(CAMERADAR_SCRIPT) $(TARGET_IP) $(PORTS) $(OUTPUT_DIR) $(TIMEOUT) $(ATTACK_INTERVAL)
+	@echo "[+] Cameradar scan complete"
 
 #######################################
 # Serve Latest Generated Directory
