@@ -1,0 +1,46 @@
+# IoT Enumeration and Probing Results
+# These directories contain sensitive security assessment data
+# and should not be committed unless explicitly added
+
+# External enumeration results
+iot_enum_*/
+
+# Internal probing results
+iot_internal_*/
+
+# Test output files
+scripts/test_output/*
+
+# Keep test_output directory but ignore contents
+!scripts/test_output/.gitkeep
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
