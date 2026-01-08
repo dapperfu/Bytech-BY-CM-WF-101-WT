@@ -221,6 +221,22 @@ expect {
             timeout {}
         }
         
+        # Fix shebang if bash not available (for BusyBox systems) and ensure Unix line endings
+        send "command -v bash >/dev/null 2>&1 || sed -i '1s|#!/usr/bin/env bash|#!/bin/sh|' REMOTE_FILE_VAL 2>/dev/null\r"
+        expect {
+            "# " {}
+            "$ " {}
+            timeout {}
+        }
+        
+        # Ensure Unix line endings (remove any CR characters)
+        send "sed -i 's/\r$//' REMOTE_FILE_VAL 2>/dev/null || tr -d '\r' < REMOTE_FILE_VAL > REMOTE_FILE_VAL.tmp && mv REMOTE_FILE_VAL.tmp REMOTE_FILE_VAL\r"
+        expect {
+            "# " {}
+            "$ " {}
+            timeout {}
+        }
+        
         # Verify file exists
         send "test -f REMOTE_FILE_VAL && echo 'FILE_EXISTS' || echo 'FILE_MISSING'\r"
         expect {
@@ -287,7 +303,13 @@ main() {
     if transfer_file; then
         log_success "Transfer complete"
         log_info "File is available at: $REMOTE_FILE"
-        log_info "To execute: telnet $TARGET_IP && chmod +x $REMOTE_FILE && $REMOTE_FILE"
+        log_info ""
+        log_info "To execute on remote device:"
+        log_info "  sh $REMOTE_FILE"
+        log_info "  OR if bash is available:"
+        log_info "  $REMOTE_FILE"
+        log_info ""
+        log_info "Note: If script uses bash syntax and device only has sh, use 'sh' to run it"
         exit 0
     else
         log_error "Transfer failed"
