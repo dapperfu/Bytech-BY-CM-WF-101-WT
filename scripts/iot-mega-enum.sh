@@ -73,6 +73,10 @@ for key, value in config.get('vulnerability_testing', {}).items():
 # Export reporting settings
 for key, value in config.get('reporting', {}).items():
     export_var(f"REPORT_{key}", value)
+
+# Export cameradar settings
+for key, value in config.get('cameradar', {}).items():
+    export_var(f"CAMERADAR_{key.upper()}", value)
 EOF
 )"
   else
@@ -200,6 +204,111 @@ run_rtsp_scan() {
     # Try to discover RTSP streams
     run_docker aler9/rtsp-simple-server rtsp-simple-server --help >/dev/null 2>&1 || true
   } >> "$OUTDIR/rtsp_scan.txt" 2>&1
+  return 0
+}
+
+run_cameradar() {
+  log "Cameradar RTSP penetration testing"
+  
+  # Check if RTSP ports are detected
+  local rtsp_ports=""
+  for port in 554 5554 8554; do
+    if echo "$PORTS" | grep -q "$port"; then
+      if [[ -z "$rtsp_ports" ]]; then
+        rtsp_ports="$port"
+      else
+        rtsp_ports="$rtsp_ports,$port"
+      fi
+    fi
+  done
+  
+  if [[ -z "$rtsp_ports" ]]; then
+    log "No RTSP ports detected, skipping cameradar"
+    return 0
+  fi
+  
+  log "Running cameradar on RTSP ports: $rtsp_ports"
+  
+  # Get custom dictionary paths
+  local credentials_file="${SCRIPT_DIR}/wordlists/cameradar-credentials.json"
+  local routes_file="${SCRIPT_DIR}/wordlists/cameradar-routes.txt"
+  
+  # Build Docker command
+  local docker_cmd=(
+    "docker" "run" "--rm"
+    "--net=host"
+  )
+  
+  # Add volume mounts for custom dictionaries if they exist
+  if [[ -f "$credentials_file" ]]; then
+    docker_cmd+=("-v" "${credentials_file}:/tmp/custom_credentials.json:ro")
+  fi
+  
+  if [[ -f "$routes_file" ]]; then
+    docker_cmd+=("-v" "${routes_file}:/tmp/custom_routes.txt:ro")
+  fi
+  
+  # Add volume mount for output
+  docker_cmd+=("-v" "$(pwd):/output")
+  
+  # Add environment variables
+  docker_cmd+=(
+    "-e" "CAMERADAR_TARGET=${TARGET_IP}"
+    "-e" "CAMERADAR_PORTS=${rtsp_ports}"
+    "-e" "CAMERADAR_TIMEOUT=${CAMERADAR_TIMEOUT:-2000}ms"
+    "-e" "CAMERADAR_ATTACK_INTERVAL=${CAMERADAR_ATTACK_INTERVAL:-0}ms"
+    "-e" "CAMERADAR_LOGGING=true"
+  )
+  
+  # Add custom dictionary paths if they exist
+  if [[ -f "$credentials_file" ]]; then
+    docker_cmd+=("-e" "CAMERADAR_CUSTOM_CREDENTIALS=/tmp/custom_credentials.json")
+  fi
+  
+  if [[ -f "$routes_file" ]]; then
+    docker_cmd+=("-e" "CAMERADAR_CUSTOM_ROUTES=/tmp/custom_routes.txt")
+  fi
+  
+  # Add image and command
+  docker_cmd+=(
+    "ullaakut/cameradar"
+    "-t" "$TARGET_IP"
+    "-p" "$rtsp_ports"
+    "--json"
+  )
+  
+  # Run cameradar and save outputs
+  local json_output="${OUTDIR}/cameradar_rtsp.json"
+  local text_output="${OUTDIR}/cameradar_rtsp.txt"
+  
+  {
+    echo "=== Cameradar RTSP Penetration Test ==="
+    echo "Target: $TARGET_IP"
+    echo "Ports: $rtsp_ports"
+    echo "Date: $(date)"
+    echo ""
+    echo "Command: ${docker_cmd[*]}"
+    echo ""
+    echo "--- JSON Output ---"
+  } > "$text_output"
+  
+  # Execute cameradar
+  if "${docker_cmd[@]}" > "$json_output" 2>> "$text_output"; then
+    {
+      echo ""
+      echo "--- Execution Complete ---"
+      echo "JSON output saved to: cameradar_rtsp.json"
+    } >> "$text_output"
+    log "Cameradar scan completed"
+  else
+    {
+      echo ""
+      echo "--- Execution Failed ---"
+      echo "Check execution log above for details"
+    } >> "$text_output"
+    log "Cameradar scan failed (check logs)"
+  fi
+  
   return 0
 }
 
@@ -426,6 +535,11 @@ main() {
   # Phase 4: Protocol-Specific Scans (can run in parallel)
   if [[ "${TOOL_PROTOCOL_SPECIFIC_RTSP:-true}" == "true" ]]; then
     run_rtsp_scan &
+    parallel_jobs+=($!)
+  fi
+  
+  if [[ "${TOOL_PROTOCOL_SPECIFIC_CAMERADAR:-true}" == "true" ]]; then
+    run_cameradar &
     parallel_jobs+=($!)
   fi
   
