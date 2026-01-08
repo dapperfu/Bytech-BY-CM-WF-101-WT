@@ -59,6 +59,22 @@ generate_summary() {
       fi
     fi
     
+    # Check for Cameradar findings
+    if [[ -f "$OUTDIR/cameradar_rtsp.json" ]]; then
+      if command -v jq &> /dev/null; then
+        local stream_count
+        stream_count=$(jq -r '.targets | length' "$OUTDIR/cameradar_rtsp.json" 2>/dev/null || echo "0")
+        if [[ "$stream_count" != "0" ]] && [[ "$stream_count" != "null" ]]; then
+          echo "[!] Cameradar discovered $stream_count RTSP stream(s) with credentials"
+          jq -r '.targets[] | "  - \(.address):\(.port) - Route: \(.route // "unknown") - Credentials: \(.username // "none"):\(.password // "none")"' "$OUTDIR/cameradar_rtsp.json" 2>/dev/null || true
+        fi
+      else
+        if grep -qi "stream\|rtsp\|target" "$OUTDIR/cameradar_rtsp.json"; then
+          echo "[*] Cameradar RTSP penetration test completed (install jq for detailed parsing)"
+        fi
+      fi
+    fi
+    
     # Check for ONVIF devices
     if [[ -f "$OUTDIR/onvif_scan.txt" ]]; then
       if grep -qi "camera\|onvif" "$OUTDIR/onvif_scan.txt"; then
@@ -242,6 +258,35 @@ EOF
       echo "        <h3>RTSP Streams</h3>"
       echo "        <div class=\"finding info\">"
       echo "            <pre>$(head -30 "$OUTDIR/rtsp_scan.txt")</pre>"
+      echo "        </div>"
+    fi
+    
+    # Cameradar
+    if [[ -f "$OUTDIR/cameradar_rtsp.json" ]] || [[ -f "$OUTDIR/cameradar_rtsp.txt" ]]; then
+      echo "        <h3>Cameradar RTSP Penetration Test</h3>"
+      echo "        <div class=\"finding info\">"
+      
+      # Try to parse JSON if jq is available
+      if command -v jq &> /dev/null && [[ -f "$OUTDIR/cameradar_rtsp.json" ]]; then
+        local stream_count
+        stream_count=$(jq -r '.targets | length' "$OUTDIR/cameradar_rtsp.json" 2>/dev/null || echo "0")
+        if [[ "$stream_count" != "0" ]] && [[ "$stream_count" != "null" ]]; then
+          echo "            <p><strong>Discovered Streams: $stream_count</strong></p>"
+          echo "            <table border=\"1\" style=\"border-collapse: collapse; width: 100%;\">"
+          echo "                <tr><th>Address</th><th>Port</th><th>Route</th><th>Username</th><th>Password</th></tr>"
+          jq -r '.targets[] | "<tr><td>\(.address // "unknown")</td><td>\(.port // "unknown")</td><td>\(.route // "unknown")</td><td>\(.username // "none")</td><td>\(.password // "none")</td></tr>"' "$OUTDIR/cameradar_rtsp.json" 2>/dev/null || true
+          echo "            </table>"
+        else
+          echo "            <p>No RTSP streams discovered by cameradar.</p>"
+        fi
+      fi
+      
+      # Show text output
+      if [[ -f "$OUTDIR/cameradar_rtsp.txt" ]]; then
+        echo "            <h4>Full Output:</h4>"
+        echo "            <pre>$(head -50 "$OUTDIR/cameradar_rtsp.txt")</pre>"
+      fi
+      
       echo "        </div>"
     fi
     
