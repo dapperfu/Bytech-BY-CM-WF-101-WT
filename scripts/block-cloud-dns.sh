@@ -160,6 +160,10 @@ EOF
     
     echo "$expect_script" | expect 2>&1 > "$temp_output"
     
+    # Escape forward slashes in cmd for sed
+    local cmd_escaped
+    cmd_escaped=$(echo "$cmd" | sed 's|/|\\/|g')
+    
     result=$(cat "$temp_output" | \
         grep -v "^spawn telnet" | \
         grep -v "^Trying" | \
@@ -176,11 +180,11 @@ EOF
         sed 's/^\[.*\]# //' | \
         sed 's/^# //' | \
         sed 's/^\$ //' | \
-        sed "s/^${cmd}$//" | \
-        sed "s/^${cmd}\r$//" | \
+        sed "s|^${cmd_escaped}$||" | \
+        sed "s|^${cmd_escaped}\r$||" | \
         sed '/^$/d')
     
-    result=$(echo "$result" | sed "1s/^${cmd}\r\?$//" | sed '/^$/d')
+    result=$(echo "$result" | sed "1s|^${cmd_escaped}\r\?$||" | sed '/^$/d')
     
     rm -f "$temp_output"
     echo "$result"
