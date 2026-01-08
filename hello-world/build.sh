@@ -28,6 +28,10 @@ log_warn() {
     echo -e "${YELLOW}[!]${NC} $*"
 }
 
+log_success() {
+    echo -e "${BLUE}[+]${NC} $*"
+}
+
 # Check if Docker image exists
 log_info "Checking for Docker image: $DOCKER_IMAGE"
 if ! docker image inspect "$DOCKER_IMAGE" &>/dev/null; then
